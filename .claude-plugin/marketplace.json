@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "dr-andreas-eisele",
+  "description": "Plugins from the Neuro AI Fluency program by Dr.-Ing. Andreas Eisele — working with agentic AI in a way that is easy on attention and focus.",
+  "owner": {
+    "name": "Dr.-Ing. Andreas Eisele",
+    "email": "kontakt@dr-andreas-eisele.de"
+  },
+  "plugins": [
+    {
+      "name": "tab-clock",
+      "description": "Shows in the terminal tab whether Claude is working, waiting for you, or done — with a running clock.",
+      "author": { "name": "Dr.-Ing. Andreas Eisele", "email": "kontakt@dr-andreas-eisele.de" },
+      "source": "./plugins/tab-clock",
+      "category": "productivity",
+      "homepage": "https://dr-andreas-eisele.de"
+    }
+  ]
+}
