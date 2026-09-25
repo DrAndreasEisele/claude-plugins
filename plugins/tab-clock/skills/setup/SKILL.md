@@ -52,6 +52,14 @@ settings, each explained and confirmed separately, all reversible with
   say so plainly before going on.
 - **tmux / screen** hide tab titles unless configured. If `$TMUX` is set,
   mention `set -g set-titles on` in `~/.tmux.conf`; do not change it yourself.
+- **Other tab-title writers.** The plugin adds its hooks next to the user's
+  own and changes none of them. But if another hook also sets the tab title,
+  the two take turns and the tab flickers. Search the `hooks` in
+  `~/.claude/settings.json`, in `.claude/settings.json` and
+  `.claude/settings.local.json` of the current project, and in any script
+  those hooks call, for `]0;`, `]2;` or `\033]` (the escape sequences that set
+  a title). If you find one, show the user where and explain the flicker in
+  one sentence. Change nothing there; let them decide whether to go on.
 
 ### 1. Hand the tab title over to the plugin (required)
 

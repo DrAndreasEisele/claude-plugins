@@ -52,6 +52,10 @@ reopen them later — keep showing Claude Code's own title without a clock.
 - **Not** in the chat panel of the VS Code extension or in the desktop app:
   there is no tab there. Windows is not supported.
 - Needs only `bash` and standard tools that both systems ship with.
+- **Your own hooks stay untouched.** The plugin adds four hooks next to yours
+  and changes none of them; they print nothing and never block. Only another
+  hook that also sets the tab title would compete with it — setup checks for
+  that and tells you.
 
 ## Accuracy and limits
 
