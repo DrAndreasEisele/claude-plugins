@@ -37,8 +37,12 @@ the end:
 | VS Code only: show the title a program sets | By default VS Code labels a tab with the program name (`zsh`, `node`, a version number) and ignores titles. Other terminals show titles already. |
 | Optional: a small shell function | Names a new tab `✳ Claude Code` right away; otherwise it shows a version number until your first prompt. |
 
-Afterwards, open a **new** terminal tab. To undo everything:
-`/tab-clock:remove`.
+Afterwards, open a **new** terminal tab and start a **new** session. To undo
+everything: `/tab-clock:remove`.
+
+**Only new sessions get the clock.** A session keeps the plugins and settings
+it started with. Sessions that already existed before setup — also when you
+reopen them later — keep showing Claude Code's own title without a clock.
 
 ## Where it works
 

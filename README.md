@@ -19,8 +19,10 @@ claude plugin marketplace add DrAndreasEisele/claude-plugins
 claude plugin install tab-clock@dr-andreas-eisele
 ```
 
-Then start `claude`, open a session and run `/tab-clock:setup`. Each plugin's
-README explains what it changes and why.
+Then start `claude`, open a session and run `/tab-clock:setup`. The clock
+appears in sessions you start after setup; sessions that existed before keep
+the old behaviour, also when reopened. Each plugin's README explains what it
+changes and why.
 
 ## Privacy
 

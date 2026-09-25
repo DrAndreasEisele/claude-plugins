@@ -145,7 +145,8 @@ List only what actually happened in this run; mark skipped steps as such.
 
 **Next**
 
-- Open a **new** terminal tab and start `claude` there. Sessions that are
-  already running keep the old title until they are restarted.
+- Open a **new** terminal tab and start a **new** session there. Sessions
+  that existed before setup keep Claude Code's own title without a clock,
+  also when reopened later.
 - Send any prompt: the tab shows `◐ 0:01 · …` and counts up.
 - `/tab-clock:remove` undoes everything in the table.
