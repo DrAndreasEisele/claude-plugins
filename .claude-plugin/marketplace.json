@@ -8,9 +8,23 @@
   },
   "plugins": [
     {
+      "name": "neuro-ai-fluency",
+      "description": "Adapts Claude to how you work: a personal, neuro-friendly output style from a few clickable questions and A/B comparisons from your own sessions, and a latency report that turns your own waiting times into three tiers for what to do while Claude works.",
+      "author": {
+        "name": "Dr.-Ing. Andreas Eisele",
+        "email": "kontakt@dr-andreas-eisele.de"
+      },
+      "source": "./plugins/neuro-ai-fluency",
+      "category": "productivity",
+      "homepage": "https://dr-andreas-eisele.de"
+    },
+    {
       "name": "tab-clock",
       "description": "Shows in the terminal tab whether Claude is working, waiting for you, or done — with a running clock.",
-      "author": { "name": "Dr.-Ing. Andreas Eisele", "email": "kontakt@dr-andreas-eisele.de" },
+      "author": {
+        "name": "Dr.-Ing. Andreas Eisele",
+        "email": "kontakt@dr-andreas-eisele.de"
+      },
       "source": "./plugins/tab-clock",
       "category": "productivity",
       "homepage": "https://dr-andreas-eisele.de"
