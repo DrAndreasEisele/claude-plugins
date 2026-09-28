@@ -89,12 +89,13 @@ and `<!-- neuro-ai-fluency:end -->`. A style file made by this skill names
 - Neither: **first run**, section A.
 - One of them, made by this skill: **later run**, section B. The mode
   follows from where `"outputStyle": "Neuro-Friendly"` is set: in
-  `<project>/.claude/settings.local.json` only → project mode.
+  `<project>/.claude/settings.local.json` only → project mode. If it is set
+  nowhere, ask the **Storage** question from A1 before writing.
 - A `neuro-friendly.md` the user wrote themselves: say so and ask (single):
   Use it as the starting point (Recommended) · Back it up and start fresh.
-  As a starting point it goes to section B1; the first write adds this
-  skill's `description` and `keep-coding-instructions: true`, and the budget
-  applies.
+  As a starting point: ask the A1 questions first (language, session
+  access, storage), then go to section B1. The first write adds this skill's
+  `description` and `keep-coding-instructions: true`, and the budget applies.
 
 If `outputStyle` in `<config>/settings.json` names another style, mention it
 in one sentence: this run will replace it as the active style, the file itself
@@ -310,8 +311,12 @@ about HDF5 yesterday"), look it up in the transcripts.
 
 Map the complaint to the lines it concerns, by principle. Change as few lines
 as possible. End a message with only the changed lines, before and after,
-and the question whether to apply them. Wait. Then back up and write. The budget applies: if a change pushes the
-style over 250 words, propose which line to drop.
+and the question whether to apply them. Wait. Then back up and write. The
+budget applies: if a change pushes the style over 250 words, propose which
+line to drop.
+
+Then A8 — only what is missing, for example when the style is not switched
+on yet — and A9.
 
 ### B2. Start over
 

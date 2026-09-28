@@ -1,6 +1,6 @@
 {
   "name": "neuro-ai-fluency",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Adapts Claude to how you work: a personal, neuro-friendly output style from a few clickable questions and A/B comparisons from your own sessions, and a latency report that turns your own waiting times into three tiers for what to do while Claude works.",
   "author": {
     "name": "Dr.-Ing. Andreas Eisele",
