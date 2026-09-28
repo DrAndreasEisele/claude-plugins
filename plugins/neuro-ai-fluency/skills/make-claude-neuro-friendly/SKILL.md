@@ -278,6 +278,13 @@ and file if missing).
   `"awaySummaryEnabled": false` into the same file. This is the key behind
   **Session recap** in `/config`; it is not documented, so the summary names
   `/config` as the fallback.
+- **If a write here is refused** (for example a guard for background
+  sessions in Git repositories), do not hand the user a shell command that
+  rebuilds the JSON. Tell them instead, for the end of A9: start a new
+  session in this folder and type `/output-style Neuro-Friendly` — Claude
+  Code then writes the setting itself, into this project's
+  `.claude/settings.local.json`. For the recap: `/config` → **Session recap**
+  off.
 - Do this without commentary. What is active and when comes at the end of A9.
 
 ### A9. Show the result

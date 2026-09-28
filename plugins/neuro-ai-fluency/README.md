@@ -60,5 +60,6 @@ your Claude Code session already sends.
 
 | Version | Changes |
 |---|---|
+| 0.2.2 | `make-claude-neuro-friendly`: if writing the project settings is refused, it points to `/output-style Neuro-Friendly` instead of a shell command |
 | 0.2.1 | `make-claude-neuro-friendly`: asks for the permission to read your sessions up front when reads outside the project are blocked; a self-written `neuro-friendly.md` as starting point now also asks where to save and switches the style on |
 | 0.2.0 | First public release: `make-claude-neuro-friendly` and `latency-report` |
