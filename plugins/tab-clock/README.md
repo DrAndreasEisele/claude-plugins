@@ -8,6 +8,22 @@ Shows in the terminal tab what Claude is doing, and for how long:
 | `⏸ 1:31 · Topic` | Claude is waiting for you, e.g. to approve a command |
 | `✳ 2:30 · Topic` | done; the last answer took 2 min 30 s |
 
+<table>
+  <tr>
+    <th>Working</th>
+    <th>Waiting for you</th>
+    <th>Done</th>
+  </tr>
+  <tr>
+    <td><img src="docs/working.png" width="260" alt="Highlighted tab shows ◐ 0:08 — Claude is working"></td>
+    <td><img src="docs/waiting.png" width="260" alt="Highlighted tab shows ⏸ 0:20 — Claude is waiting for an approval"></td>
+    <td><img src="docs/done.png" width="260" alt="Highlighted tab shows ✳ 0:30 — the answer took 30 seconds"></td>
+  </tr>
+</table>
+
+<sub>The terminal panel in VS Code. The highlighted tab passes through all three
+states; the tab below it is a second session that keeps working meanwhile.</sub>
+
 **Why:** one glance at the tab tells you whether switching to another task is
 worth it — without opening the session, and without a notification that
 interrupts you.
