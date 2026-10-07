@@ -24,8 +24,10 @@ no `settings.json`, no shell files.
 
 - Write to the user in English, briefly. Say in one or two sentences what each
   step does, using the texts below. No more.
-- **Ask once, before writing the config file**, and show its content. Ask
-  nothing else.
+- **Ask once, before writing the config file**, in plain words (step 1).
+  Ask nothing else.
+- **Report checks only when they fail or find something.** A check that
+  passes gets no sentence.
 - If a check fails, **stop**: say what is missing and how to install it, and
   write nothing.
 - Keep a running list of every file and folder you create or change, with
@@ -64,14 +66,21 @@ Run the checks with the Bash tool. Stop at the first failure.
    `.claude/settings.local.json` of the current project, for
    `MessageDisplay`. If there is one, show the user where. Explain in one
    sentence: *both would change the same answer, so you might see two lines or
-   only one of them.* Change nothing there; ask whether to go on.
-
-Tell the user in one line which python3 was found and that it works.
+   only one of them.* Change nothing there; ask whether to go on. If there
+   is none, say nothing about it.
 
 ### 1. Write the config file
 
-Show the content and ask. Then write `~/.claude/review-effort/config`,
-creating the folder if needed:
+Ask with exactly this text (with the kept values on a rerun):
+
+> Review Effort will use:
+> - Approximate reading speed: 137 words/min (you can change it later)
+> - Shortest answer that gets the Review Effort line: 150 words
+>
+> Saved in `~/.claude/review-effort/config`. Switch it on?
+
+Do not show the file content. After the user agrees, write
+`~/.claude/review-effort/config`, creating the folder if needed:
 
 ```
 python=<absolute path from step 0>
@@ -108,7 +117,7 @@ only what happened in this run.
 | Path | Change |
 |---|---|
 | `~/.claude/review-effort/` | folder created — or "existed already" |
-| `~/.claude/review-effort/config` | created with python path, `wpm=137`, `min_words=150` — or "python line updated, other values kept" |
+| `~/.claude/review-effort/config` | created: python path, reading speed 137 words/min, shortest answer 150 words — or "python path updated, other values kept" |
 
 **Not changed:** `~/.claude/settings.json`, project settings, shell files.
 The plugin itself was installed by `claude plugin install`, not by this setup.
@@ -117,7 +126,8 @@ The plugin itself was installed by `claude plugin install`, not by this setup.
 
 - Works right away, in this session too: the next answer of 150 words or more
   starts with the line.
-- If the minutes regularly feel too short or too long, change `wpm=` in the
-  config file (lower = more minutes). The next answer uses the new value.
+- If the minutes regularly feel too short or too long, change the reading
+  speed in the config file, the line `wpm=` (lower = more minutes). The next
+  answer uses the new value.
 - **Switch off:** delete the folder `~/.claude/review-effort`, or uninstall
   the plugin.
