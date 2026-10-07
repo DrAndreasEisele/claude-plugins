@@ -43,15 +43,15 @@ Then start `claude`, open a session and run:
 /tab-clock:setup
 ```
 
-Setup makes three one-time settings outside the plugin. It explains each one,
-asks before changing anything, backs up every file, and lists all changes at
-the end:
+Setup finds out which of three one-time settings outside the plugin are
+still needed, asks you **once** to confirm them, backs up every file, and lists
+all changes at the end:
 
 | Setting | Why |
 |---|---|
 | Switch off Claude Code's own tab title | Claude Code writes the title itself; with both writing, the tab would flicker. The plugin shows the same information plus the clock. |
 | VS Code only: show the title a program sets | By default VS Code labels a tab with the program name (`zsh`, `node`, a version number) and ignores titles. Other terminals show titles already. |
-| Optional: a small shell function | Names a new tab `✳ Claude Code` right away; otherwise it shows a version number until your first prompt. |
+| A small shell function | Names a new tab `✳ Claude Code` right away; otherwise it shows the shell's own title until your first prompt. |
 
 Afterwards, open a **new** terminal tab and start a **new** session. To undo
 everything: `/tab-clock:remove`.
@@ -97,9 +97,9 @@ reopen them later — keep showing Claude Code's own title without a clock.
 |---|---|---|
 | `<plugin folder>/hooks/hooks.json` | **the hooks:** run the script when you send a prompt, when Claude waits for you, finishes or stops on an error, or the session ends | plugin install |
 | `<plugin folder>/scripts/tab-clock.sh` | sets the tab title, runs the clock | plugin install |
-| `~/.claude/settings.json` → `env.CLAUDE_CODE_DISABLE_TERMINAL_TITLE` | Claude Code's own tab title off | `/tab-clock:setup`, step 1 |
-| VS Code user `settings.json` → `terminal.integrated.tabs.title` (Remote-SSH: the remote's `~/.vscode-server/data/Machine/settings.json`) | tabs show the title a program sets — VS Code users only | `/tab-clock:setup`, step 2 |
-| `~/.zshrc` or `~/.bashrc`, block between `# >>> tab-clock >>>` and `# <<< tab-clock <<<` | names a new tab before the first prompt — optional | `/tab-clock:setup`, step 3 |
+| `~/.claude/settings.json` → `env.CLAUDE_CODE_DISABLE_TERMINAL_TITLE` | Claude Code's own tab title off | `/tab-clock:setup` |
+| VS Code user `settings.json` → `terminal.integrated.tabs.title` (Remote-SSH: the remote's `~/.vscode-server/data/Machine/settings.json`) | tabs show the title a program sets — VS Code users only | `/tab-clock:setup` |
+| `~/.zshrc` or `~/.bashrc`, block between `# >>> tab-clock >>>` and `# <<< tab-clock <<<` | names a new tab before the first prompt | `/tab-clock:setup` |
 | `<file>.bak-tab-clock-<time>` next to each changed file | backup before every change | setup and remove |
 | `$TMPDIR/tab-clock-<user id>/<session>.run`, `.state`, `.done` (Linux usually `/tmp/…`) | current turn and state of a running session; deleted when the turn or session ends | the hooks and the clock, while they run |
 
