@@ -1,6 +1,6 @@
 {
   "name": "tab-clock",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Shows in the terminal tab whether Claude is working, waiting for you, or done — with a running clock. One glance tells you whether switching to another task is worth it.",
   "author": {
     "name": "Dr.-Ing. Andreas Eisele",

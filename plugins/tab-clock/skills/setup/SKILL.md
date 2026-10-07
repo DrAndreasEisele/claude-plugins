@@ -1,7 +1,7 @@
 ---
 name: setup
 description: This skill should be used when the user wants to switch on the tab-clock plugin — "set up tab-clock", "show Claude's status in my terminal tab", "show a timer in the tab", "richte die Tab-Uhr ein". It finds the user's setup, makes the one-time settings the plugin cannot make by itself after a single confirmation, and ends with a list of every change.
-version: 0.3.2
+version: 0.3.3
 ---
 
 # Set up tab-clock
@@ -91,10 +91,12 @@ without it, a new session shows the shell's own title (e.g. `user@host: ~`)
 until the first prompt, which is worse than without the plugin.
 
 Pick the file from `$SHELL`: `~/.zshrc` for zsh, `~/.bashrc` for bash. Run
-`type claude` in that shell: if `claude` is already an alias or function, name
-it in the confirmation and leave this change out. For any other shell, leave
-it out and say in the summary that new tabs keep the shell title until the
-first prompt. The block, appended unchanged — its markers let
+`type claude` in that shell: if `claude` is already an alias or function,
+leave this change out. For any other shell, leave it out too. In both cases
+say in the summary that new tabs keep the shell title until the first prompt.
+This change is part of a) and is **not listed in the confirmation** — it only
+supports a) and would distract there; the summary lists it like every other
+change. The block, appended unchanged — its markers let
 `/tab-clock:remove` take it out again exactly:
 
 ```sh
@@ -117,7 +119,8 @@ The function steps aside by itself once a) is undone.
 
 ### 2. Confirm once
 
-Use this text as the question itself, with only the changes still needed.
+Use this text as the question itself, with only the changes a) and b) still
+needed; c) goes with a) without a line of its own.
 Write it as plain lines, exactly in this shape — **no table and no code
 block**: the question box shows them unformatted, with every `|` visible.
 
@@ -125,9 +128,12 @@ block**: the question box shows them unformatted, with every `|` visible.
 Please confirm — tab-clock makes these changes so the tab shows Claude's status with a clock:
 • ~/.claude/settings.json — Claude Code's own tab title off; the plugin writes it instead
 • <VS Code file> — VS Code shows the title the program sets
-• ~/.bashrc — new tabs show "✳ Claude Code" before the first prompt
 Backups first; /tab-clock:remove undoes everything. Claude Code may ask once more per file.
 ```
+
+Only if c) is the one change still needed, give it its own line instead:
+`• ~/.zshrc — new tabs show "✳ Claude Code" before the first prompt` (or
+`~/.bashrc`).
 
 On `Cancel`, change nothing and stop. If nothing is needed, say in one line
 that tab-clock is already set up.
