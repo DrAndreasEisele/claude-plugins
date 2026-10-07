@@ -1,0 +1,10 @@
+{
+  "name": "review-effort",
+  "version": "0.1.0",
+  "description": "Puts the reading time on top of every longer Claude answer, e.g. \"🧠 Review Effort: ~3 min\". You see at a glance whether an answer is a quick look or needs a proper review slot.",
+  "author": {
+    "name": "Dr.-Ing. Andreas Eisele",
+    "email": "kontakt@dr-andreas-eisele.de"
+  },
+  "homepage": "https://dr-andreas-eisele.de"
+}
