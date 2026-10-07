@@ -168,16 +168,19 @@ Branch: shown only when it is not main or master.
 ```
 
 When setup runs again on a finished setup, start the text with
-`Current: <current format as a preview line>` and offer `Keep as is` as the
+`Current: <current format as an example line>` and offer `Keep as is` as the
 first option.
 
-Options, each with a preview line of the tab; mark the first recommended:
+Options: the label names the blocks, the description shows an example line of
+the tab. **No `preview` field**: a preview box squeezes the options into a
+narrow column and cuts the example off. Mark the first option recommended,
+but only on a first setup — on a rerun, `Keep as is` comes first unmarked.
 
-| Option | Preview | `TAB_CLOCK_FORMAT` |
+| Label | Description | `TAB_CLOCK_FORMAT` |
 |---|---|---|
-| `Clock · folder · branch · topic` | `◐ 1:31 · Website ⎇ feature · Login form errors` | `clock folder branch topic` |
-| `Clock · topic · folder · branch` | `◐ 1:31 · Login form errors · Website ⎇ feature` | `clock topic folder branch` |
-| `Clock · folder · branch` (no topic, Haiku is never asked) | `◐ 1:31 · Website ⎇ feature` | `clock folder branch` |
+| `Clock · folder · branch · topic` | `◐ 1:31 · Website ⎇ dev · Login form` | `clock folder branch topic` |
+| `Clock · topic · folder · branch` | `◐ 1:31 · Login form · Website ⎇ dev` | `clock topic folder branch` |
+| `Clock · folder · branch` | `◐ 1:31 · Website ⎇ dev — no topic, Haiku is never asked` | `clock folder branch` |
 
 The question box also offers a free answer: there the user names the blocks
 in their own order, e.g. `topic clock folder`. Accept `clock`, `folder`,
