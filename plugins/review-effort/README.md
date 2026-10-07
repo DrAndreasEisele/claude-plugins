@@ -25,8 +25,8 @@ Then start `claude`, open a session and run:
 
 Setup checks that `python3` is available. If it is missing, it tells you how
 to install it and stops; nothing is switched on. Otherwise it writes one small
-file, `~/.claude/review-effort/config`, and lists at the end every file it
-created or changed. Until then the plugin stays inactive. It changes no
+file, `~/.claude/review-effort/config`. At the end it lists every file the
+plugin and setup put on your machine, including the hook. Until then the plugin stays inactive. It changes no
 `settings.json` and no shell files. The line appears from the next longer
 answer on, in the same session.
 
@@ -54,8 +54,9 @@ answer on, in the same session.
 
 Changes apply from the next answer.
 
-**Switch off:** delete the folder `~/.claude/review-effort`, or uninstall the
-plugin.
+**Pause:** delete the folder `~/.claude/review-effort`; nothing is shown until
+you run setup again. **Remove completely:** also run
+`claude plugin uninstall review-effort@dr-andreas-eisele`.
 
 ## Where it works
 

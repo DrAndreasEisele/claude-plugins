@@ -24,7 +24,7 @@ no `settings.json`, no shell files.
 
 - Write to the user in English, briefly. Say in one or two sentences what each
   step does, using the texts below. No more.
-- **Ask once, before writing the config file**, in plain words (step 1).
+- **Ask once, before writing the config file**, in plain words (step 2).
   Ask nothing else.
 - **Report checks only when they fail or find something.** A check that
   passes gets no sentence.
@@ -35,7 +35,19 @@ no `settings.json`, no shell files.
 
 ## Procedure
 
-### 0. Check that it can work
+### 0. Say what the plugin does
+
+Start with exactly this text, before any check:
+
+> **Review Effort** shows how long a longer answer takes to read, e.g.
+> **🧠 Review Effort: ~3 min**. You see whether it is a quick look or needs a
+> proper slot before you start reading. In the VS Code panel the line sits
+> above the answer; in the terminal it comes at its end, where the screen
+> stops after a long answer.
+>
+> Setup checks that python3 is available and writes one small settings file.
+
+### 1. Check that it can work
 
 Run the checks with the Bash tool. Stop at the first failure.
 
@@ -69,7 +81,7 @@ Run the checks with the Bash tool. Stop at the first failure.
    only one of them.* Change nothing there; ask whether to go on. If there
    is none, say nothing about it.
 
-### 1. Write the config file
+### 2. Write the config file
 
 Ask with exactly this text (with the kept values on a rerun):
 
@@ -83,22 +95,22 @@ Do not show the file content. After the user agrees, write
 `~/.claude/review-effort/config`, creating the folder if needed:
 
 ```
-python=<absolute path from step 0>
+python=<absolute path from step 1>
 wpm=137
 min_words=150
 ```
 
-`python` must be the absolute path found in step 0, not just `python3`: the
+`python` must be the absolute path found in step 1, not just `python3`: the
 hook starts exactly that file. Do not ask for a reading speed: nobody knows
 their own. If the file already exists, replace only the `python` line and keep
 the other values, which the user may have adjusted.
 
-### 2. Check the hook
+### 3. Check the hook
 
 Run the hook once with a sample answer of 300 words:
 
 ```bash
-<python from step 0> -c 'import json; print(json.dumps({"message_id": "setup-test", "index": 0, "final": True, "delta": "word " * 300}))' \
+<python from step 1> -c 'import json; print(json.dumps({"message_id": "setup-test", "index": 0, "final": True, "delta": "word " * 300}))' \
   | bash "${CLAUDE_SKILL_DIR}/../../scripts/review-effort.sh"
 ```
 
@@ -107,20 +119,42 @@ The output must be JSON whose `displayContent` begins with
 kept another `wpm`). If it prints nothing, show the user the config file and
 the output of `bash -x` on the script; do not guess further.
 
-### 3. Summary
+### 4. Summary
 
-End with this, filled in from the running list. Name every path in full; list
-only what happened in this run.
+First find what the plugin installation put on the machine, so the table is
+complete:
 
-**What changed**
+- **Plugin folder:** `realpath "${CLAUDE_SKILL_DIR}/../.."`. If it lies under
+  `~/.claude/plugins/cache/`, it was installed; otherwise the session was
+  started with `--plugin-dir` and nothing was installed.
+- **Where it is switched on:** search `~/.claude/settings.json` and the
+  current project's `.claude/settings.local.json` for `review-effort@`
+  (key `enabledPlugins`); also `~/.claude/plugins/installed_plugins.json`.
 
-| Path | Change |
-|---|---|
-| `~/.claude/review-effort/` | folder created — or "existed already" |
-| `~/.claude/review-effort/config` | created: python path, reading speed 137 words/min, shortest answer 150 words — or "python path updated, other values kept" |
+End with this, filled in from the findings and the running list. Name every
+path in full, with `~` for the home folder.
 
-**Not changed:** `~/.claude/settings.json`, project settings, shell files.
-The plugin itself was installed by `claude plugin install`, not by this setup.
+**What is on your machine now**
+
+| Path | What it is | By |
+|---|---|---|
+| `<plugin folder>/hooks/hooks.json` | **the hook:** tells Claude Code to run the script below at every answer it shows | plugin install |
+| `<plugin folder>/scripts/review-effort.sh`, `review_effort.py` | the script that counts the words and adds the line | plugin install |
+| `<plugin folder>/skills/setup/` | this setup | plugin install |
+| `~/.claude/settings.json` (or the project's `.claude/settings.local.json`) | entry `review-effort@…` under `enabledPlugins`: the plugin is on | plugin install |
+| `~/.claude/plugins/installed_plugins.json` | entry for `review-effort`: version and folder | plugin install |
+| `~/.claude/review-effort/` | folder for the settings | this setup: created — or "existed already" |
+| `~/.claude/review-effort/config` | python path, reading speed 137 words/min, shortest answer 150 words | this setup: created — or "python path updated, other values kept" |
+
+Leave out rows for files where no entry was found. If the session runs with
+`--plugin-dir`, replace the plugin-install rows with one row: the plugin
+folder, "loaded for this session only, nothing installed".
+
+Below the table, one line: *Plugin-install rows go away with
+`claude plugin uninstall review-effort@dr-andreas-eisele`; setup rows by
+deleting `~/.claude/review-effort`.*
+
+Setup changed nothing else: no other settings, no shell files.
 
 **Next**
 
@@ -129,5 +163,6 @@ The plugin itself was installed by `claude plugin install`, not by this setup.
 - If the minutes regularly feel too short or too long, change the reading
   speed in the config file, the line `wpm=` (lower = more minutes). The next
   answer uses the new value.
-- **Switch off:** delete the folder `~/.claude/review-effort`, or uninstall
-  the plugin.
+- **Pause:** delete the folder `~/.claude/review-effort`; the plugin stays
+  installed but shows nothing until setup runs again.
+- **Remove completely:** also uninstall the plugin with the command above.
