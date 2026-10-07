@@ -5,7 +5,8 @@
 #   ⏸ 1:31 · Folder · Topic    Claude is waiting for you (a permission prompt)
 #   ✳ 2:30 · Folder · Topic    done; the last answer took 2:30
 #
-# Folder is the project folder of the session. Topic is the session name, and
+# Folder is the project folder of the session, "repo/worktree" in a git
+# worktree. Topic is the session name, and
 # appears only when there is one: Claude Code writes its automatic title only
 # now and then while its own tab title is off.
 #
@@ -51,6 +52,24 @@ topic() {
     # JSON escapes: \" becomes a quote again, escaped control characters go.
     t=$(printf '%s' "$t" | sed -E 's/\\u00[01][0-9a-fA-F]//g; s/\\(["\\/])/\1/g')
     printf '%s' "${t:0:30}"   # VS Code cuts long tab titles; keep the clock visible
+}
+
+# The project folder for the tab. In a git worktree "repo/worktree": the
+# folder name alone would not say which repository it belongs to. Reads the
+# .git file of the worktree directly; no git process needed.
+place() {
+    local dir=$1 d=$1 gitdir
+    [ "$dir" = "$HOME" ] && { printf '~'; return; }
+    while [ -n "$d" ] && [ ! -e "$d/.git" ]; do d=${d%/*}; done
+    if [ -f "$d/.git" ]; then
+        read -r _ gitdir < "$d/.git"       # gitdir: <repo>/.git/worktrees/<name>
+        case $gitdir in
+            */.git/worktrees/*)
+                gitdir=$(cd "$d" 2>/dev/null && cd "${gitdir%%/.git/worktrees/*}" 2>/dev/null && pwd)
+                [ -n "$gitdir" ] && { printf '%s/%s' "${gitdir##*/}" "${d##*/}"; return; } ;;
+        esac
+    fi
+    printf '%s' "${dir##*/}"
 }
 
 # Was the turn stopped with Esc? That fires no Stop hook; Claude Code only
@@ -171,13 +190,11 @@ case $EVENT in
         rm -f "$RUN/$SESSION.done"
         echo working > "$RUN/$SESSION.state"
         bytes=$(wc -c < "$TRANSCRIPT" 2>/dev/null || echo 0)
-        cwd=$(field cwd)
-        folder=${cwd##*/}
-        [ "$cwd" = "$HOME" ] && folder="~"
+        folder=$(place "$(field cwd)")
         # Detached, every stream closed: the hook must return at once.
         detach=nohup
         command -v setsid > /dev/null && detach=setsid
-        $detach bash "$0" clock "$cpid" "$(date +%s)" "$TTY" "$TRANSCRIPT" "$SESSION" "${bytes// /}" "$runid" "${folder:0:24}" \
+        $detach bash "$0" clock "$cpid" "$(date +%s)" "$TTY" "$TRANSCRIPT" "$SESSION" "${bytes// /}" "$runid" "${folder:0:30}" \
             < /dev/null > /dev/null 2>&1 &
         ;;
     Notification)

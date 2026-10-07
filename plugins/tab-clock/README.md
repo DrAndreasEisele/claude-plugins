@@ -77,7 +77,8 @@ reopen them later — keep showing Claude Code's own title without a clock.
 
 - The clock counts in whole seconds from the moment you send the prompt; it
   can differ from Claude's own "Worked for …" by up to one second.
-- After the clock comes the project folder, then the session name. The name
+- After the clock comes the project folder — in a git worktree `repo/worktree`,
+  e.g. `Website/feature-x` — then the session name. The name
   appears when you set one with `/rename`; Claude Code's automatic title only
   now and then, because Claude Code rarely writes it while its own tab title
   is off.
