@@ -11,8 +11,8 @@ are not counted; table cells are. Shown as whole minutes with "~": the figure
 marks the size of an answer, it is not a precise prediction.
 
 Claude Code calls the hook once per chunk of completed lines (delta, index,
-final). Words are summed per message across chunks in a small state file that
-is removed with the last chunk. The line goes on top when the whole message
+final). For a message in several chunks, words are summed in a small state
+file that is removed with the last chunk; a one-chunk message writes nothing. The line goes on top when the whole message
 comes as one chunk (the usual case in the VS Code panel), otherwise at the end,
 because the total is only known with the last chunk.
 
@@ -85,7 +85,6 @@ def main():
     hook = json.loads(sys.stdin.buffer.read())  # bytes: independent of the locale
     delta = hook.get("delta") or ""
     index, final = hook.get("index"), hook.get("final")
-    os.makedirs(MSG_STATE, exist_ok=True)
     state_file = os.path.join(MSG_STATE, re.sub(r"[^\w-]", "_", str(hook.get("message_id"))))
     words, in_code = 0, False
     if index and os.path.exists(state_file):
@@ -94,12 +93,14 @@ def main():
     added, in_code = prose_words(delta, in_code)
     words += added
     if not final:
+        os.makedirs(MSG_STATE, exist_ok=True)
         with open(state_file, "w") as f:
             json.dump([words, in_code], f)
         return
-    if os.path.exists(state_file):
-        os.remove(state_file)
-    remove_stale()
+    if index:
+        if os.path.exists(state_file):
+            os.remove(state_file)
+        remove_stale()
     conf = settings()
     if words < conf["min_words"]:
         return

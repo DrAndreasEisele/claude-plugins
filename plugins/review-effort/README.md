@@ -24,18 +24,19 @@ Then start `claude`, open a session and run:
 ```
 
 Setup checks that `python3` is available. If it is missing, it tells you how
-to install it and stops; nothing is switched on. Otherwise it asks for your
-reading speed and writes one small file, `~/.claude/review-effort/config`.
-Until then the plugin stays inactive. It changes no `settings.json` and no
-shell files.
+to install it and stops; nothing is switched on. Otherwise it writes one small
+file, `~/.claude/review-effort/config`, and lists at the end every file it
+created or changed. Until then the plugin stays inactive. It changes no
+`settings.json` and no shell files. The line appears from the next longer
+answer on, in the same session.
 
 ## What the number means
 
 - **Prose words divided by a reading speed**, rounded to whole minutes.
   Code blocks, URLs and Markdown syntax are not counted; table cells are.
-- **Default 137 words per minute.** Measured on one experienced reader
-  reviewing Claude's answers in their own work. It is a starting point, not
-  a norm: if the minutes feel too short for you, lower the number.
+- **137 words per minute.** Measured on one experienced reader reviewing
+  Claude's answers in their own work. It is a starting point, not a norm: if
+  the minutes regularly feel too short for you, lower `wpm` (see below).
 - **A size signal, not a stopwatch.** How long a review really takes depends
   on how much you have to think about, not only on the length. Read `~1 min`
   vs. `~6 min` as "quick look" vs. "plan time for it".
@@ -51,8 +52,7 @@ shell files.
 | `wpm` | `137` | reading speed in words per minute |
 | `min_words` | `150` | shorter answers get no line |
 
-Changes apply from the next answer. Run `/review-effort:setup` again or edit
-the file by hand.
+Changes apply from the next answer.
 
 **Switch off:** delete the folder `~/.claude/review-effort`, or uninstall the
 plugin.

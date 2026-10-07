@@ -1,6 +1,6 @@
 ---
 name: setup
-description: This skill should be used when the user wants to switch on the review-effort plugin or change its reading speed — "set up review-effort", "show the reading time on Claude's answers", "how long will this answer take to review", "richte Review Effort ein", "zeig mir die Lesezeit über den Antworten". It checks that python3 is available, stops with a clear message if not, and otherwise switches the reading-time line on with one small config file.
+description: This skill should be used when the user wants to switch on the review-effort plugin — "set up review-effort", "show the reading time on Claude's answers", "how long will this answer take to review", "richte Review Effort ein", "zeig mir die Lesezeit über den Antworten". It checks that python3 is available, stops with a clear message if not, and otherwise switches the reading-time line on with one small config file.
 version: 0.1.0
 ---
 
@@ -24,9 +24,12 @@ no `settings.json`, no shell files.
 
 - Write to the user in English, briefly. Say in one or two sentences what each
   step does, using the texts below. No more.
-- **Ask before writing the config file** and show its content.
+- **Ask once, before writing the config file**, and show its content. Ask
+  nothing else.
 - If a check fails, **stop**: say what is missing and how to install it, and
   write nothing.
+- Keep a running list of every file and folder you create or change, with
+  what happened to it, for the summary at the end.
 
 ## Procedure
 
@@ -65,63 +68,56 @@ Run the checks with the Bash tool. Stop at the first failure.
 
 Tell the user in one line which python3 was found and that it works.
 
-### 1. Reading speed
+### 1. Write the config file
 
-Explain, in two sentences: *The minutes are the prose words of the answer
-divided by a reading speed. The default, 137 words per minute, was measured on
-one experienced reader reviewing Claude's answers in their own work — it is a
-starting point, not a norm.*
-
-Ask whether to keep 137 or use another number. If the config file already
-exists, show its current values and ask whether to keep them.
-
-### 2. Write the config file
-
-Show the content and ask. Then create `~/.claude/review-effort/config`
-(create the folder if needed; if the file exists, replace only the lines you
-changed):
+Show the content and ask. Then write `~/.claude/review-effort/config`,
+creating the folder if needed:
 
 ```
 python=<absolute path from step 0>
-wpm=<number from step 1>
+wpm=137
 min_words=150
 ```
 
 `python` must be the absolute path found in step 0, not just `python3`: the
-hook starts exactly that file.
+hook starts exactly that file. Do not ask for a reading speed: nobody knows
+their own. If the file already exists, replace only the `python` line and keep
+the other values, which the user may have adjusted.
 
-### 3. Check the hook
+### 2. Check the hook
 
 Run the hook once with a sample answer of 300 words:
 
 ```bash
-python3 -c 'import json; print(json.dumps({"message_id": "setup-test", "index": 0, "final": True, "delta": "word " * 300}))' \
+<python from step 0> -c 'import json; print(json.dumps({"message_id": "setup-test", "index": 0, "final": True, "delta": "word " * 300}))' \
   | bash "${CLAUDE_SKILL_DIR}/../../scripts/review-effort.sh"
 ```
 
-Use the python path from step 0 instead of `python3`.
-
 The output must be JSON whose `displayContent` begins with
-`> **🧠 Review Effort: ~2 min**` (300 words at 137 wpm; adjust if the user
-chose another speed). If it prints nothing, show the user the config file and
+`> **🧠 Review Effort: ~2 min**` (300 words at 137 wpm; recompute if the file
+kept another `wpm`). If it prints nothing, show the user the config file and
 the output of `bash -x` on the script; do not guess further.
 
-### 4. Summary
+### 3. Summary
 
-End with:
+End with this, filled in from the running list. Name every path in full; list
+only what happened in this run.
 
 **What changed**
 
-| File | Content |
+| Path | Change |
 |---|---|
-| `~/.claude/review-effort/config` | python path, reading speed, minimum length |
+| `~/.claude/review-effort/` | folder created — or "existed already" |
+| `~/.claude/review-effort/config` | created with python path, `wpm=137`, `min_words=150` — or "python line updated, other values kept" |
+
+**Not changed:** `~/.claude/settings.json`, project settings, shell files.
+The plugin itself was installed by `claude plugin install`, not by this setup.
 
 **Next**
 
-- Works in sessions started after the plugin was installed; if this session
-  started before, open a new one.
-- Answers shorter than 150 words get no line.
-- **Change the speed:** run `/review-effort:setup` again, or edit `wpm=` in
-  the config file. The next answer uses the new value.
+- Works right away, in this session too: the next answer of 150 words or more
+  starts with the line.
+- If the minutes regularly feel too short or too long, change `wpm=` in the
+  config file (lower = more minutes). The next answer uses the new value.
 - **Switch off:** delete the folder `~/.claude/review-effort`, or uninstall
   the plugin.
