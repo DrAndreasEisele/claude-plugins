@@ -6,9 +6,9 @@
 #   ✳ 2:30 · Folder · Topic    done; the last answer took 2:30
 #
 # Folder is the project folder of the session, "repo/worktree" in a git
-# worktree. Topic is the session name, and
-# appears only when there is one: Claude Code writes its automatic title only
-# now and then while its own tab title is off.
+# worktree, followed by "⎇ branch" unless the branch is main or master.
+# Topic is the session name, and appears only when there is one: Claude Code
+# writes its automatic title only now and then while its own tab title is off.
 #
 # Entry point for the hooks (UserPromptSubmit, Notification, Stop, StopFailure,
 # SessionEnd) and, started from UserPromptSubmit, the clock itself:
@@ -55,21 +55,31 @@ topic() {
 }
 
 # The project folder for the tab. In a git worktree "repo/worktree": the
-# folder name alone would not say which repository it belongs to. Reads the
-# .git file of the worktree directly; no git process needed.
+# folder name alone would not say which repository it belongs to. A branch
+# other than main or master follows as "⎇ branch", so a switched checkout is
+# visible at a glance. Reads .git and HEAD directly; no git process needed.
 place() {
-    local dir=$1 d=$1 gitdir
-    [ "$dir" = "$HOME" ] && { printf '~'; return; }
+    local dir=$1 d=$1 name gitdir="" repo head="" branch=""
+    name=${dir##*/}
+    [ "$dir" = "$HOME" ] && name="~"
     while [ -n "$d" ] && [ ! -e "$d/.git" ]; do d=${d%/*}; done
     if [ -f "$d/.git" ]; then
         read -r _ gitdir < "$d/.git"       # gitdir: <repo>/.git/worktrees/<name>
+        case $gitdir in /*) ;; *) gitdir="$d/$gitdir" ;; esac
         case $gitdir in
             */.git/worktrees/*)
-                gitdir=$(cd "$d" 2>/dev/null && cd "${gitdir%%/.git/worktrees/*}" 2>/dev/null && pwd)
-                [ -n "$gitdir" ] && { printf '%s/%s' "${gitdir##*/}" "${d##*/}"; return; } ;;
+                repo=$(cd "$d" 2>/dev/null && cd "${gitdir%%/.git/worktrees/*}" 2>/dev/null && pwd)
+                [ -n "$repo" ] && name="${repo##*/}/${d##*/}" ;;
         esac
+    elif [ -d "$d/.git" ]; then
+        gitdir="$d/.git"
     fi
-    printf '%s' "${dir##*/}"
+    if [ -n "$gitdir" ]; then
+        { read -r head < "$gitdir/HEAD"; } 2>/dev/null
+        case $head in "ref: refs/heads/"*) branch=${head#ref: refs/heads/} ;; esac
+        case $branch in main | master | "${d##*/}") branch="" ;; esac
+    fi
+    printf '%s%s' "${name:0:30}" "${branch:+ ⎇ ${branch:0:24}}"
 }
 
 # Was the turn stopped with Esc? That fires no Stop hook; Claude Code only
@@ -194,7 +204,7 @@ case $EVENT in
         # Detached, every stream closed: the hook must return at once.
         detach=nohup
         command -v setsid > /dev/null && detach=setsid
-        $detach bash "$0" clock "$cpid" "$(date +%s)" "$TTY" "$TRANSCRIPT" "$SESSION" "${bytes// /}" "$runid" "${folder:0:30}" \
+        $detach bash "$0" clock "$cpid" "$(date +%s)" "$TTY" "$TRANSCRIPT" "$SESSION" "${bytes// /}" "$runid" "$folder" \
             < /dev/null > /dev/null 2>&1 &
         ;;
     Notification)
