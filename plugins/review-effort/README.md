@@ -26,9 +26,10 @@ Then start `claude`, open a session and run:
 Setup checks that `python3` is available. If it is missing, it tells you how
 to install it and stops; nothing is switched on. Otherwise it writes one small
 file, `~/.claude/review-effort/config`. At the end it lists every file the
-plugin and setup put on your machine, including the hook. Until then the plugin stays inactive. It changes no
-`settings.json` and no shell files. The line appears from the next longer
-answer on, in the same session.
+plugin and setup put on your machine, including the hook. Until setup has run,
+the plugin stays inactive. Setup itself changes no `settings.json` and no
+shell files. The line appears from the next longer answer on, in the same
+session.
 
 ## What the number means
 
