@@ -41,6 +41,26 @@ what your Claude Code session already sends. Skills that read your session
 logs do so locally, read-only and only when you run them. Everything they
 write stays on your machine.
 
+## Files on your machine
+
+Installing writes only what Claude Code itself needs to know about a plugin.
+Paths for the default `~/.claude`; with `--scope local`, the two
+`settings.json` entries go into `<project>/.claude/settings.local.json`
+instead.
+
+| Path | What | Written by |
+|---|---|---|
+| `~/.claude/plugins/marketplaces/dr-andreas-eisele/` | copy of this marketplace | `claude plugin marketplace add` |
+| `~/.claude/plugins/known_marketplaces.json` | where the marketplace comes from | `claude plugin marketplace add` |
+| `~/.claude/settings.json` → `extraKnownMarketplaces` | marketplace declared | `claude plugin marketplace add` |
+| `~/.claude/plugins/cache/dr-andreas-eisele/<plugin>/<version>/` | the plugin's files, including its hooks | `claude plugin install` |
+| `~/.claude/plugins/installed_plugins.json` | installed version and folder | `claude plugin install` |
+| `~/.claude/settings.json` → `enabledPlugins` | plugin switched on | `claude plugin install` |
+
+`claude plugin uninstall <plugin>@dr-andreas-eisele` and
+`claude plugin marketplace remove dr-andreas-eisele` take them out again.
+What each plugin's setup writes on top is listed at the end of its README.
+
 ## License
 
 See [LICENSE](LICENSE).

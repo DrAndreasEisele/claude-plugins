@@ -56,6 +56,22 @@ Both skills read your local Claude Code session logs, read-only and only when
 you run them. They collect nothing, log nothing and send nothing beyond what
 your Claude Code session already sends.
 
+## Files on your machine
+
+| Path | What | Written by |
+|---|---|---|
+| `~/.claude/output-styles/neuro-friendly.md` | your output style | `make-claude-neuro-friendly` |
+| `~/.claude/CLAUDE.md`, block between `<!-- neuro-ai-fluency:start -->` and `<!-- neuro-ai-fluency:end -->` | background, skills, boundaries — personal mode only | `make-claude-neuro-friendly` |
+| `~/.claude/settings.json` → `outputStyle`, optionally `awaySummaryEnabled` | style switched on — in project mode `<project>/.claude/settings.local.json` instead | `make-claude-neuro-friendly` |
+| `<file>.bak-neuro-friendly-<time>` next to each changed file | backup before every change | `make-claude-neuro-friendly` |
+| a temporary folder | analysis scripts and intermediate results; the report itself stays in the chat | `latency-report` |
+
+Both skills read `~/.claude/projects/` (your session logs) read-only and
+change nothing there. The plugin has no hooks.
+Installing a plugin also adds entries that Claude Code itself manages —
+see [Files on your machine](../../README.md#files-on-your-machine) in the main
+README.
+
 ## Versions
 
 | Version | Changes |

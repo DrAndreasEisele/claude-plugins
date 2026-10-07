@@ -80,6 +80,22 @@ The hook logs nothing and sends nothing. While a long answer streams in, it
 keeps a word count in `~/.claude/review-effort/msgs/` and deletes it when the
 answer is complete.
 
+## Files on your machine
+
+| Path | What | Written by |
+|---|---|---|
+| `<plugin folder>/hooks/hooks.json` | **the hook:** runs the script at every answer Claude Code shows | plugin install |
+| `<plugin folder>/scripts/review-effort.sh`, `review_effort.py` | counts the words, adds the line | plugin install |
+| `~/.claude/review-effort/config` | python path, reading speed, shortest answer | `/review-effort:setup` |
+| `~/.claude/review-effort/msgs/` | word count of an answer still streaming in; deleted when it is complete | the hook, while it runs |
+
+Nothing else is changed: no `settings.json`, no shell files, no backups
+needed. `<plugin folder>` is
+`~/.claude/plugins/cache/dr-andreas-eisele/review-effort/<version>/`.
+Installing a plugin also adds entries that Claude Code itself manages —
+see [Files on your machine](../../README.md#files-on-your-machine) in the main
+README.
+
 ## Versions
 
 | Version | Changes |
