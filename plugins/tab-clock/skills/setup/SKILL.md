@@ -1,7 +1,7 @@
 ---
 name: setup
 description: This skill should be used when the user wants to switch on the tab-clock plugin — "set up tab-clock", "show Claude's status in my terminal tab", "show a timer in the tab", "richte die Tab-Uhr ein". It finds the user's setup, makes the one-time settings the plugin cannot make by itself after a single confirmation, and ends with a list of every change.
-version: 0.4.1
+version: 0.4.2
 ---
 
 # Set up tab-clock
@@ -169,18 +169,20 @@ Branch: shown only when it is not main or master.
 Your own order: type the blocks, e.g. topic clock folder
 ```
 
-When setup runs again on a finished setup, start the text with
-`Current: <current format as an example line>` and offer `Keep as is` as the
-first option, with the current example line as its description. Keep the
-empty line right after the question line.
-
 Options: **the label is the example line of the tab** — what the user picks
 is what they will see — and the description names the blocks in words, which
 also teaches the words for a free answer. Use `Topic` for the title, never
 an invented one, which would read like a real setting. **No `preview`
 field**: a preview box squeezes the options into a narrow column and cuts the
-example off. Mark the first option recommended, but only on a first setup —
-on a rerun, `Keep as is` comes first unmarked.
+example off. Keep the empty line right after the question line.
+
+- **First setup:** the three options below; mark the first recommended.
+- **Setup runs again:** no separate "Keep as is" option and no "Current"
+  line. The option that matches the current format comes first, its
+  description starting with `current — `, e.g.
+  `current — clock · topic · folder · branch`; nothing is marked
+  recommended. Is the current format none of the three, add it as the first
+  option in the same shape. Picking it changes nothing.
 
 | Label | Description | `TAB_CLOCK_FORMAT` |
 |---|---|---|
