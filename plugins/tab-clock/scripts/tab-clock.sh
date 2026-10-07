@@ -5,8 +5,9 @@
 #   ⏸ 1:31 · Topic    Claude is waiting for you (a permission prompt)
 #   ✳ 2:30 · Topic    done; the last answer took 2:30
 #
-# Entry point for the hooks (UserPromptSubmit, Notification, Stop, SessionEnd)
-# and, started from UserPromptSubmit, the clock itself: `tab-clock.sh clock …`.
+# Entry point for the hooks (UserPromptSubmit, Notification, Stop, StopFailure,
+# SessionEnd) and, started from UserPromptSubmit, the clock itself:
+# `tab-clock.sh clock …`.
 #
 # Does nothing unless CLAUDE_CODE_DISABLE_TERMINAL_TITLE is set (the setup
 # skill does that). Otherwise Claude Code writes the title as well and the two
@@ -77,29 +78,38 @@ claude_tty() {
     done
 }
 
-# Our clock for this session, if one is running.
-clock_pid() {
-    local pid
-    pid=$(cat "$RUN/$SESSION.pid" 2>/dev/null) || return 1
-    ps -o args= -p "$pid" 2>/dev/null | grep -q 'tab-clock.sh clock' && echo "$pid"
-}
-
 # --- The clock -----------------------------------------------------------------
-# Rewrites the title each second until the turn ends, is interrupted, or the
-# Claude process is gone — it never outlives its session.
+# Rewrites the title each second until the turn ends, is interrupted, a newer
+# turn takes over, or the Claude process is gone — it never outlives its session.
+#
+# Hooks and clock talk only through files in $RUN, one set per session:
+#   <session>.run    the current turn; a clock whose turn it no longer is quits
+#   <session>.state  working | waiting <transcript size>
+#   <session>.done   the turn has ended; written only by Stop and StopFailure,
+#                    so no other writer can overwrite it
+# No hook needs to find the clock process itself.
+
+# Is this clock's turn still the current one?
+current() {
+    local cur=""
+    read -r cur < "$RUN/$SESSION.run" 2>/dev/null
+    [ "$cur" = "$RUNID" ]
+}
 
 clock() {
     local CPID=$1 START=$2 name="" tick=-1 el sym state size line last=""
-    TTY=$3 TRANSCRIPT=$4 SESSION=$5 BYTES0=$6
+    TTY=$3 TRANSCRIPT=$4 SESSION=$5 BYTES0=$6 RUNID=$7
     SECONDS=$(( $(date +%s) - START ))   # bash counts on from here, no process per tick
     while kill -0 "$CPID" 2>/dev/null; do
+        current || exit 0                  # a newer turn or the session end has the tab
         el=$SECONDS
         state=""
         read -r state < "$RUN/$SESSION.state" 2>/dev/null
+        [ -e "$RUN/$SESSION.done" ] && state=done
         if [ "$el" != "$tick" ]; then          # once per second
             tick=$el
             { [ $((el % 15)) = 0 ] || [ -z "$name" ]; } && name=$(topic)
-            interrupted && state=done
+            [ "$state" = done ] || { interrupted && state=done; }
         fi
         case $state in
             done) sym=✳ ;;
@@ -116,12 +126,15 @@ clock() {
         esac
         mmss "$el"
         line="$sym $CLK${name:+ · $name}"
-        [ "$line" != "$last" ] && { title "$line"; last=$line; }
+        if [ "$line" != "$last" ]; then
+            current || exit 0              # checked again: topic() may have taken a while
+            title "$line"; last=$line
+        fi
         [ "$sym" = ✳ ] && break
-        sleep 0.25
+        sleep 0.5                          # each sleep is a process: 0.25 s cost twice the CPU
     done
     [ "$sym" = ✳ ] || title ""   # Claude is gone without an answer: free the tab
-    rm -f "$RUN/$SESSION.pid" "$RUN/$SESSION.state"
+    current && rm -f "$RUN/$SESSION.run" "$RUN/$SESSION.state" "$RUN/$SESSION.done"
 }
 
 # --- Hook entry point ----------------------------------------------------------
@@ -146,28 +159,32 @@ case $EVENT in
     UserPromptSubmit)
         read -r cpid TTY <<< "$(claude_tty)"
         [ -n "$TTY" ] || exit 0
-        old=$(clock_pid) && kill "$old" 2>/dev/null
+        # A new turn number first: a clock still running from an earlier turn
+        # sees it and quits by itself.
+        runid="$$.$(date +%s)"
+        echo "$runid" > "$RUN/$SESSION.run"
+        rm -f "$RUN/$SESSION.done"
         echo working > "$RUN/$SESSION.state"
         bytes=$(wc -c < "$TRANSCRIPT" 2>/dev/null || echo 0)
         # Detached, every stream closed: the hook must return at once.
         detach=nohup
         command -v setsid > /dev/null && detach=setsid
-        $detach bash "$0" clock "$cpid" "$(date +%s)" "$TTY" "$TRANSCRIPT" "$SESSION" "${bytes// /}" \
+        $detach bash "$0" clock "$cpid" "$(date +%s)" "$TTY" "$TRANSCRIPT" "$SESSION" "${bytes// /}" "$runid" \
             < /dev/null > /dev/null 2>&1 &
-        echo $! > "$RUN/$SESSION.pid"
         ;;
     Notification)
         # Only while a turn runs; the idle reminder after an answer is ignored.
-        clock_pid > /dev/null || exit 0
+        [ -e "$RUN/$SESSION.run" ] && [ ! -e "$RUN/$SESSION.done" ] || exit 0
         size=$(wc -c < "$TRANSCRIPT" 2>/dev/null || echo 0)
         echo "waiting ${size// /}" > "$RUN/$SESSION.state"
         ;;
-    Stop)
-        clock_pid > /dev/null && echo done > "$RUN/$SESSION.state"
+    Stop | StopFailure)
+        # StopFailure: an API error ended the turn, e.g. a used-up usage limit.
+        [ -e "$RUN/$SESSION.run" ] && : > "$RUN/$SESSION.done"
         ;;
     SessionEnd)
-        old=$(clock_pid) && kill "$old" 2>/dev/null
-        rm -f "$RUN/$SESSION.pid" "$RUN/$SESSION.state"
+        # Without its turn file a running clock quits by itself.
+        rm -f "$RUN/$SESSION.run" "$RUN/$SESSION.state" "$RUN/$SESSION.done"
         read -r _ TTY <<< "$(claude_tty)"
         [ -n "$TTY" ] && title ""   # hand the tab back to the terminal
         ;;

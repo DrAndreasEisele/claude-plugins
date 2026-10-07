@@ -1,7 +1,7 @@
 ---
 name: setup
 description: This skill should be used when the user wants to switch on the tab-clock plugin — "set up tab-clock", "show Claude's status in my terminal tab", "show a timer in the tab", "richte die Tab-Uhr ein". It explains and makes the three one-time settings the plugin cannot make by itself, each only after the user agrees, and ends with a list of every change.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Set up tab-clock
@@ -30,6 +30,9 @@ outside the plugin, in the user's own files; this skill makes them.
   sentences **what** changes and **why**, using the texts below. No more.
 - **Ask before each step** and show the exact change. Skip a step when the
   setting is already in place, and say so.
+- Claude Code may then ask for permission to write the file as well. Say so
+  once at the start: that second prompt confirms the same change, it is not
+  a new one.
 - **Back up every file before writing it**, as
   `<file>.bak-tab-clock-<YYYYMMDD-HHMMSS>`. Merge into files; never overwrite
   them wholesale.
@@ -80,30 +83,34 @@ setting the plugin stays inactive, so nothing else can go wrong.
 
 ### 2. Let VS Code show the title (VS Code users only)
 
-Ask whether the user runs Claude Code in the terminal inside VS Code (or
-Cursor, Antigravity, VSCodium); `$TERM_PROGRAM` = `vscode` is a hint. For
-everyone else, skip this step: other terminals show the title by default.
-
 Why, for the user: *By default, VS Code labels a terminal tab with the name of
 the running program — `zsh`, `node`, or a version number — and ignores the
 title a program sets. This setting tells VS Code to show that title instead,
 so the clock becomes visible. It also shows Claude Code's own title, so it is
 worth keeping even without this plugin.*
 
-Merge into the VS Code user settings:
+The setting is always the same line:
 
 ```json
 { "terminal.integrated.tabs.title": "${sequence}" }
 ```
 
-- macOS: `~/Library/Application Support/Code/User/settings.json`
-- Linux: `~/.config/Code/User/settings.json`
-- Forks keep their own folder next to `Code` (e.g. `Cursor`); list
-  `*/User/settings.json` in that parent folder and ask which to use.
+Find the case yourself; the user only confirms it. Say in one sentence which
+case you found and which file you will change, then ask once.
 
-The file may contain comments and trailing commas: edit it as text and keep
-them. If the key already exists with another value, show both and ask. The
-change takes effect immediately, without restarting VS Code.
+| Case | How to tell | File |
+|---|---|---|
+| No VS Code | `$TERM_PROGRAM` is not `vscode` | none — skip this step; other terminals show the title already |
+| VS Code on this computer | `$TERM_PROGRAM` = `vscode`, no sign of a VM | macOS: `~/Library/Application Support/Code/User/settings.json`; Linux: `~/.config/Code/User/settings.json` |
+| VS Code connected to a VM (Remote-SSH) | `$TERM_PROGRAM` = `vscode`, and `$SSH_CONNECTION` is set or `command -v code` points into `~/.vscode-server` | `~/.vscode-server/data/Machine/settings.json` on the VM — the user settings live on the user's own computer, out of reach; this file applies to every VS Code window connected to this VM |
+
+- Forks (Cursor, Antigravity, VSCodium) use their own folder in place of
+  `Code` or `.vscode-server`, e.g. `Cursor` or `.cursor-server`. Use the one
+  that exists; ask only if there are several.
+- Create the file with just this setting if it is missing.
+- The file may contain comments and trailing commas: edit it as text and keep
+  them. If the key already exists with another value, show both and ask.
+- The change takes effect immediately, without restarting VS Code.
 
 ### 3. Name the tab before the first prompt (recommended)
 

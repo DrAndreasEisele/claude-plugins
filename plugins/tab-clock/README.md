@@ -68,7 +68,7 @@ reopen them later — keep showing Claude Code's own title without a clock.
 - **Not** in the chat panel of the VS Code extension or in the desktop app:
   there is no tab there. Windows is not supported.
 - Needs only `bash` and standard tools that both systems ship with.
-- **Your own hooks stay untouched.** The plugin adds four hooks next to yours
+- **Your own hooks stay untouched.** The plugin adds five hooks next to yours
   and changes none of them; they print nothing and never block. Only another
   hook that also sets the tab title would compete with it — setup checks for
   that and tells you.
@@ -85,21 +85,23 @@ reopen them later — keep showing Claude Code's own title without a clock.
   background agent), it ends its turn and the tab shows `✳` although the task
   is still running. When the task reports back, Claude continues on its own;
   the tab stays at `✳` until your next prompt.
+- When an API error ends the turn — for example a used-up usage limit — the
+  tab shows `✳` as well; the error itself is in the session.
 - While Claude works, one small background process per session runs the
-  clock. It ends by itself when the answer is done, interrupted, or the
-  session closes.
+  clock. It ends by itself when the answer is done, interrupted, a new
+  prompt starts, or the session closes.
 
 ## Files on your machine
 
 | Path | What | Written by |
 |---|---|---|
-| `<plugin folder>/hooks/hooks.json` | **the hooks:** run the script when you send a prompt, when Claude waits for you, finishes, or the session ends | plugin install |
+| `<plugin folder>/hooks/hooks.json` | **the hooks:** run the script when you send a prompt, when Claude waits for you, finishes or stops on an error, or the session ends | plugin install |
 | `<plugin folder>/scripts/tab-clock.sh` | sets the tab title, runs the clock | plugin install |
 | `~/.claude/settings.json` → `env.CLAUDE_CODE_DISABLE_TERMINAL_TITLE` | Claude Code's own tab title off | `/tab-clock:setup`, step 1 |
-| VS Code user `settings.json` → `terminal.integrated.tabs.title` | tabs show the title a program sets — VS Code users only | `/tab-clock:setup`, step 2 |
+| VS Code user `settings.json` → `terminal.integrated.tabs.title` (Remote-SSH: the remote's `~/.vscode-server/data/Machine/settings.json`) | tabs show the title a program sets — VS Code users only | `/tab-clock:setup`, step 2 |
 | `~/.zshrc` or `~/.bashrc`, block between `# >>> tab-clock >>>` and `# <<< tab-clock <<<` | names a new tab before the first prompt — optional | `/tab-clock:setup`, step 3 |
 | `<file>.bak-tab-clock-<time>` next to each changed file | backup before every change | setup and remove |
-| `$TMPDIR/tab-clock-<user id>/<session>.state`, `.pid` | state and clock process of a running session; deleted when the session ends | the hooks, while they run |
+| `$TMPDIR/tab-clock-<user id>/<session>.run`, `.state`, `.done` (Linux usually `/tmp/…`) | current turn and state of a running session; deleted when the turn or session ends | the hooks and the clock, while they run |
 
 `/tab-clock:remove` takes out the settings and the shell block; it asks about
 the VS Code setting, which may have been there before. `<plugin folder>` is

@@ -1,7 +1,7 @@
 ---
 name: remove
 description: This skill should be used when the user wants to switch off or remove the tab-clock plugin — "remove tab-clock", "turn off the tab timer", "undo tab-clock setup", "Tab-Uhr entfernen". It undoes exactly what the setup skill changed, nothing else, and ends with a list of every change.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Remove tab-clock
@@ -17,8 +17,8 @@ briefly. Show each change and ask before writing; back up every file first as
 2. **Shell file** (`~/.zshrc` or `~/.bashrc`): delete the block from
    `# >>> tab-clock >>>` to `# <<< tab-clock <<<`, markers included. If the
    markers are missing, change nothing and say so.
-3. **VS Code setting** `terminal.integrated.tabs.title`: ask whether to keep
-   it. *Why keep it: without it, VS Code shows only the program name in the
+3. **VS Code setting** `terminal.integrated.tabs.title` (on Remote-SSH in
+   `~/.vscode-server/data/Machine/settings.json`): ask whether to keep it. *Why keep it: without it, VS Code shows only the program name in the
    tab, and Claude Code's own title stays invisible too. It may also have been
    there before setup.*
 4. End with the list of changes — file, change, backup — and the last step:
