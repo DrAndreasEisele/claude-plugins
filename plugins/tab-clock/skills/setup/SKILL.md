@@ -1,7 +1,7 @@
 ---
 name: setup
 description: This skill should be used when the user wants to switch on the tab-clock plugin — "set up tab-clock", "show Claude's status in my terminal tab", "show a timer in the tab", "richte die Tab-Uhr ein". It finds the user's setup, makes the one-time settings the plugin cannot make by itself after a single confirmation, and ends with a list of every change.
-version: 0.3.3
+version: 0.3.4
 ---
 
 # Set up tab-clock
@@ -68,11 +68,21 @@ Check each setting; leave out what is already in place.
 Keep every existing key and every other `env` entry. If the file is not valid
 JSON, stop and show the parse error instead of repairing it.
 
-**b) VS Code shows the title a program sets** — the line is always:
+**b) VS Code shows the title a program sets, and the folder only once** —
+two lines:
 
 ```json
-{ "terminal.integrated.tabs.title": "${sequence}" }
+{
+  "terminal.integrated.tabs.title": "${sequence}",
+  "terminal.integrated.tabs.description": "${task}${separator}${local}"
+}
 ```
+
+The second line is VS Code's default description without `${cwdFolder}`:
+the plugin already puts the folder in the title, and VS Code would show it a
+second time in smaller type behind it. If a description is already set,
+remove only `${cwdFolder}` or `${cwd}` from it (and a `${separator}` it
+leaves dangling) and keep the rest; if nothing remains, use the line above.
 
 | Case | How to tell | File |
 |---|---|---|
@@ -83,8 +93,8 @@ JSON, stop and show the parse error instead of repairing it.
 Forks (Cursor, Antigravity, VSCodium) use their own folder in place of `Code`
 or `.vscode-server`, e.g. `Cursor` or `.cursor-server`; use the one that
 exists. Create the file if it is missing. It may contain comments and
-trailing commas: edit it as text and keep them. If the key already exists
-with another value, name both in the confirmation.
+trailing commas: edit it as text and keep them. If `tabs.title` already
+exists with another value, name both in the confirmation.
 
 **c) New tabs named before the first prompt** — required together with a):
 without it, a new session shows the shell's own title (e.g. `user@host: ~`)
@@ -127,7 +137,7 @@ block**: the question box shows them unformatted, with every `|` visible.
 ```
 Please confirm — tab-clock makes these changes so the tab shows Claude's status with a clock:
 • ~/.claude/settings.json — Claude Code's own tab title off; the plugin writes it instead
-• <VS Code file> — VS Code shows the title the program sets
+• <VS Code file> — VS Code shows the title the program sets, the folder only once
 Backups first; /tab-clock:remove undoes everything. Claude Code may ask once more per file.
 ```
 
