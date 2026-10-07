@@ -193,7 +193,7 @@ clock() {
 # Runs detached, once per session, from the first prompt that says something.
 # A separate `claude -p` with the user's own login: Haiku, no tools, no hooks
 # (so this plugin does not call itself), no MCP servers, nothing saved as a
-# session. About 2–5 s and a few hundred tokens.
+# session. About 2–5 s and 4,000 tokens, mostly context Claude Code always loads.
 
 make_topic() {
     local SESSION=$1 pid i t

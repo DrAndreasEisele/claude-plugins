@@ -27,8 +27,10 @@ introductions, no explanations beyond the one line per change given below.
 
 - **Find out everything yourself first** (steps 0 and 1), then ask **once**.
 - Ask with **one single question** — AskUserQuestion with exactly one
-  question, options `Yes, make these changes` and `Cancel`. Never a form with
-  several questions or steps.
+  question and the options given in step 2. Never a form with several
+  questions or steps.
+- Running setup again is the way to switch session titles on or off later:
+  step 2 covers that case too.
 - **Back up every file before writing it**, as
   `<file>.bak-tab-clock-<YYYYMMDD-HHMMSS>` — all backups in one command.
   Merge into files; never overwrite them wholesale.
@@ -127,6 +129,10 @@ claude() {
 
 The function steps aside by itself once a) is undone.
 
+**d) Session titles from Haiku** — `~/.claude/settings.json`, `env` key
+`TAB_CLOCK_TOPIC`: `"on"` or `"off"`. Missing counts as on. Not a change of
+its own: the answer in step 2 sets it.
+
 ### 2. Confirm once
 
 Use this text as the question itself, with only the changes a) and b) still
@@ -138,15 +144,29 @@ block**: the question box shows them unformatted, with every `|` visible.
 Please confirm — tab-clock makes these changes so the tab shows Claude's status with a clock:
 • ~/.claude/settings.json — Claude Code's own tab title off; the plugin writes it instead
 • <VS Code file> — VS Code shows the title the program sets, the folder only once
+Session titles: Haiku names each session once from your first prompt — about 0.1 cent and 2–5 s per session.
 Backups first; /tab-clock:remove undoes everything. Claude Code may ask once more per file.
 ```
+
+Options, in this order: `Yes, with session titles` (mark it recommended),
+`Yes, without session titles`, `Cancel`. The answer sets d).
 
 Only if c) is the one change still needed, give it its own line instead:
 `• ~/.zshrc — new tabs show "✳ Claude Code" before the first prompt` (or
 `~/.bashrc`).
 
-On `Cancel`, change nothing and stop. If nothing is needed, say in one line
-that tab-clock is already set up.
+On `Cancel`, change nothing and stop.
+
+**Already set up** (a, b and c in place) — the user runs setup again to
+change the session titles. Ask instead:
+
+```
+tab-clock is set up. Session titles from Haiku are on — about 0.1 cent and 2–5 s per session.
+```
+
+(or `off`), with the options `Keep as is` and `Switch session titles off`
+(or `on`). Write only d), then say in one line that it applies to new
+sessions.
 
 ### 3. Make the changes, then summarise
 

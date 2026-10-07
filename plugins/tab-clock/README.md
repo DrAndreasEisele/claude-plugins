@@ -85,10 +85,11 @@ reopen them later — keep showing Claude Code's own title without a clock.
   is off, so the plugin asks **Haiku** once per session for a 2–4-word title
   from your first prompt (slash commands and very short prompts are skipped).
   This is a separate `claude -p` call with your own login: no tools, no hooks,
-  no MCP servers, not saved as a session; a few hundred tokens, 2–5 s. After a
-  short first answer the tab adds the title as soon as it arrives. To switch
-  it off, add `"TAB_CLOCK_TOPIC": "off"` to the `env` block of
-  `~/.claude/settings.json`.
+  no MCP servers, not saved as a session; about 4,000 tokens (≈ 0.1 cent), 2–5 s. After a
+  short first answer the tab adds the title as soon as it arrives. Setup asks
+  whether you want it; run `/tab-clock:setup` again to switch it on or off
+  later (it sets `TAB_CLOCK_TOPIC` to `on` or `off` in the `env` block of
+  `~/.claude/settings.json`).
 - It recognises Esc and the session name from the entries Claude Code writes
   to its transcript. If a Claude Code update changes that format, at worst the
   topic is missing, or after Esc the clock keeps running until your next
@@ -109,7 +110,7 @@ reopen them later — keep showing Claude Code's own title without a clock.
 |---|---|---|
 | `<plugin folder>/hooks/hooks.json` | **the hooks:** run the script when you send a prompt, when Claude waits for you, finishes or stops on an error, or the session ends | plugin install |
 | `<plugin folder>/scripts/tab-clock.sh` | sets the tab title, runs the clock | plugin install |
-| `~/.claude/settings.json` → `env.CLAUDE_CODE_DISABLE_TERMINAL_TITLE` | Claude Code's own tab title off | `/tab-clock:setup` |
+| `~/.claude/settings.json` → `env.CLAUDE_CODE_DISABLE_TERMINAL_TITLE`, `env.TAB_CLOCK_TOPIC` | Claude Code's own tab title off; session titles from Haiku on or off | `/tab-clock:setup` |
 | VS Code user `settings.json` → `terminal.integrated.tabs.title`, `terminal.integrated.tabs.description` (Remote-SSH: the remote's `~/.vscode-server/data/Machine/settings.json`) | tabs show the title a program sets; the description drops the folder, which the title already shows — VS Code users only | `/tab-clock:setup` |
 | `~/.zshrc` or `~/.bashrc`, block between `# >>> tab-clock >>>` and `# <<< tab-clock <<<` | names a new tab before the first prompt | `/tab-clock:setup` |
 | `<file>.bak-tab-clock-<time>` next to each changed file | backup before every change | setup and remove |

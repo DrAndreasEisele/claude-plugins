@@ -10,9 +10,9 @@ Undo the settings from `/tab-clock:setup`. Write to the user in English,
 briefly. Show each change and ask before writing; back up every file first as
 `<file>.bak-tab-clock-<YYYYMMDD-HHMMSS>`. Remove only what setup added.
 
-1. **`~/.claude/settings.json`:** delete the key
-   `CLAUDE_CODE_DISABLE_TERMINAL_TITLE` from `env`; remove `env` itself only
-   if it is empty afterwards. *Why: Claude Code then writes its own tab title
+1. **`~/.claude/settings.json`:** delete the keys
+   `CLAUDE_CODE_DISABLE_TERMINAL_TITLE` and `TAB_CLOCK_TOPIC` from `env`;
+   remove `env` itself only if it is empty afterwards. *Why: Claude Code then writes its own tab title
    again — spinner and topic, without the clock.*
 2. **Shell file** (`~/.zshrc` or `~/.bashrc`): delete the block from
    `# >>> tab-clock >>>` to `# <<< tab-clock <<<`, markers included. If the
