@@ -1,7 +1,7 @@
 ---
 name: setup
 description: This skill should be used when the user wants to switch on the tab-clock plugin — "set up tab-clock", "show Claude's status in my terminal tab", "show a timer in the tab", "richte die Tab-Uhr ein". It finds the user's setup, makes the one-time settings the plugin cannot make by itself after a single confirmation, and ends with a list of every change.
-version: 0.3.4
+version: 0.4.0
 ---
 
 # Set up tab-clock

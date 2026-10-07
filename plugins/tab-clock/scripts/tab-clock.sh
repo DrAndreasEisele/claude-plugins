@@ -7,8 +7,12 @@
 #
 # Folder is the project folder of the session, "repo/worktree" in a git
 # worktree, followed by "⎇ branch" unless the branch is main or master.
-# Topic is the session name, and appears only when there is one: Claude Code
-# writes its automatic title only now and then while its own tab title is off.
+# Topic is the session name: one set with /rename, else Claude Code's
+# automatic title, else a short title Haiku makes from the first prompt (see
+# make_topic). Claude Code writes its automatic title only now and then while
+# its own tab title is off, so the last one is the usual case.
+# TAB_CLOCK_TOPIC=off (in the env block of ~/.claude/settings.json) switches
+# the Haiku title off.
 #
 # Entry point for the hooks (UserPromptSubmit, Notification, Stop, StopFailure,
 # SessionEnd) and, started from UserPromptSubmit, the clock itself:
@@ -130,7 +134,7 @@ current() {
 }
 
 clock() {
-    local CPID=$1 START=$2 name="" looked="" tick=-1 el sym state size line last=""
+    local CPID=$1 START=$2 name="" tname="" own="" looked="" tick=-1 el sym state size line last="" wait asking
     TTY=$3 TRANSCRIPT=$4 SESSION=$5 BYTES0=$6 RUNID=$7 FOLDER=$8
     SECONDS=$(( $(date +%s) - START ))   # bash counts on from here, no process per tick
     while kill -0 "$CPID" 2>/dev/null; do
@@ -142,7 +146,9 @@ clock() {
         if [ "$el" != "$tick" ]; then          # once per second
             tick=$el
             # Every 15 s: topic() reads the whole transcript, which can be large.
-            { [ $((el % 15)) = 0 ] || [ -z "$looked" ]; } && { name=$(topic); looked=1; }
+            { [ $((el % 15)) = 0 ] || [ -z "$looked" ]; } && { tname=$(topic); looked=1; }
+            [ -n "$tname" ] || { read -r own < "$RUN/$SESSION.topic"; } 2>/dev/null
+            name=${tname:-$own}
             [ "$state" = done ] || { interrupted && state=done; }
         fi
         case $state in
@@ -168,7 +174,51 @@ clock() {
         sleep 0.5                          # each sleep is a process: 0.25 s cost twice the CPU
     done
     [ "$sym" = ✳ ] || title ""   # Claude is gone without an answer: free the tab
+    # A short first answer can end before Haiku has named the session: wait
+    # for the title a little longer, then write it next to the final time.
+    if [ "$sym" = ✳ ] && [ -z "$name" ] && [ -e "$RUN/$SESSION.asked" ]; then
+        for wait in $(seq 40); do
+            current && kill -0 "$CPID" 2>/dev/null || break
+            [ -e "$RUN/$SESSION.asked" ]; asking=$?   # gone: Haiku has finished
+            { read -r own < "$RUN/$SESSION.topic"; } 2>/dev/null
+            [ -n "$own" ] && { title "$sym $CLK${FOLDER:+ · $FOLDER} · $own"; break; }
+            [ "$asking" = 0 ] || break
+            sleep 0.5
+        done
+    fi
     current && rm -f "$RUN/$SESSION.run" "$RUN/$SESSION.state" "$RUN/$SESSION.done"
+}
+
+# --- Session title from Haiku ----------------------------------------------------
+# Runs detached, once per session, from the first prompt that says something.
+# A separate `claude -p` with the user's own login: Haiku, no tools, no hooks
+# (so this plugin does not call itself), no MCP servers, nothing saved as a
+# session. About 2–5 s and a few hundred tokens.
+
+make_topic() {
+    local SESSION=$1 pid i t
+    cd "$RUN" || return
+    command claude -p --model haiku --tools "" --strict-mcp-config \
+        --no-session-persistence --disable-slash-commands \
+        --settings '{"disableAllHooks":true}' \
+        --system-prompt 'Name the topic of the request you receive in 2 to 4 words, in the language of the request, like a short session title. Reply with the title only: no quotes, no punctuation at the end.' \
+        < "$SESSION.prompt" > "$SESSION.out" 2>/dev/null &
+    pid=$!
+    for i in $(seq 80); do kill -0 "$pid" 2>/dev/null || break; sleep 0.5; done
+    kill "$pid" 2>/dev/null                 # no answer within 40 s: give up
+    # Last line that says something, without control characters or quotes.
+    t=$(grep -v '^[[:space:]]*$' "$SESSION.out" 2>/dev/null | tail -n 1 |
+        tr -d '\000-\037\177"' | sed -E 's/^[[:space:]]+//; s/[[:space:].]+$//')
+    rm -f "$SESSION.prompt" "$SESSION.out"
+    # At most 30 characters, cut at a word boundary where there is one.
+    if [ "${#t}" -gt 30 ]; then
+        t=${t:0:31}
+        case $t in *" "*) t=${t% *} ;; *) t=${t:0:30} ;; esac
+    fi
+    if [ -n "$t" ] && [ -e "$SESSION.asked" ]; then   # the session may have ended meanwhile
+        printf '%s\n' "$t" > "$SESSION.topic.$$" && mv -f "$SESSION.topic.$$" "$SESSION.topic"
+    fi
+    rm -f "$SESSION.asked"
 }
 
 # --- Hook entry point ----------------------------------------------------------
@@ -176,6 +226,10 @@ clock() {
 if [ "$1" = clock ]; then
     shift
     clock "$@"
+    exit 0
+fi
+if [ "$1" = topic ]; then
+    make_topic "$2"
     exit 0
 fi
 
@@ -206,6 +260,24 @@ case $EVENT in
         command -v setsid > /dev/null && detach=setsid
         $detach bash "$0" clock "$cpid" "$(date +%s)" "$TTY" "$TRANSCRIPT" "$SESSION" "${bytes// /}" "$runid" "$folder" \
             < /dev/null > /dev/null 2>&1 &
+        # Haiku names the session once, from the first prompt that says
+        # something: not a slash command, not a one-word greeting, and only if
+        # the session has no title yet.
+        if [ "${TAB_CLOCK_TOPIC:-on}" != off ] && [ ! -e "$RUN/$SESSION.topic" ] &&
+            [ ! -e "$RUN/$SESSION.asked" ] && command -v claude > /dev/null &&
+            ! grep -qaE '"type":"(custom|ai)-title"' "$TRANSCRIPT" 2>/dev/null; then
+            prompt=$(printf '%s' "$payload" | sed -nE 's/.*"prompt" *: *"(([^"\\]|\\.)*)".*/\1/p' | head -n 1 |
+                sed -E 's/\\[nrt]/ /g; s/\\(["\\/])/\1/g')
+            case $prompt in
+                /* | "") ;;
+                *)
+                    if [ "${#prompt}" -ge 12 ]; then
+                        printf '%s' "${prompt:0:1000}" > "$RUN/$SESSION.prompt"
+                        : > "$RUN/$SESSION.asked"
+                        $detach bash "$0" topic "$SESSION" < /dev/null > /dev/null 2>&1 &
+                    fi ;;
+            esac
+        fi
         ;;
     Notification)
         # Only while a turn runs; the idle reminder after an answer is ignored.
@@ -219,7 +291,8 @@ case $EVENT in
         ;;
     SessionEnd)
         # Without its turn file a running clock quits by itself.
-        rm -f "$RUN/$SESSION.run" "$RUN/$SESSION.state" "$RUN/$SESSION.done"
+        rm -f "$RUN/$SESSION.run" "$RUN/$SESSION.state" "$RUN/$SESSION.done" \
+            "$RUN/$SESSION.topic" "$RUN/$SESSION.asked"
         read -r _ TTY <<< "$(claude_tty)"
         [ -n "$TTY" ] && title ""   # hand the tab back to the terminal
         ;;
