@@ -87,6 +87,8 @@ reopen them later — keep showing Claude Code's own title without a clock.
   - **folder:** the project folder; in a git worktree `repo/worktree`, e.g.
     `Website/feature-x`.
   - **branch:** `⎇ branch`, only when it is not `main` or `master`.
+  - Folder and branch follow along while Claude works: a branch switch or a
+    move into a worktree shows within about 5 seconds.
   - **topic:** a name you set with `/rename` wins, then Claude Code's
     automatic title. Claude Code rarely writes that one while its own tab
     title is off, so the plugin asks **Haiku** once per session for a short

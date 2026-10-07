@@ -76,6 +76,20 @@ render() {
     done
 }
 
+# Folder and branch again, while the turn runs: Claude may switch the branch
+# or move into a worktree. The session's current folder is the "cwd" of the
+# latest transcript entry.
+refresh_place() {
+    local c
+    case $FORMAT in *" folder "* | *" branch "*) ;; *) return ;; esac
+    c=$(tail -c 65536 "$TRANSCRIPT" 2>/dev/null | grep -ao '"cwd":"[^"]*"' | tail -n 1)
+    c=${c#\"cwd\":\"}
+    c=${c%\"}
+    [ -n "$c" ] && CWD=$c
+    c=$(place "$CWD")                       # outside the read: IFS must not reach place()
+    IFS=$'\037' read -r FOLDER BRANCH <<< "$c"
+}
+
 # The session name, as Claude Code itself would show it: a name set with
 # /rename wins over the automatic topic title.
 topic() {
@@ -167,7 +181,7 @@ current() {
 
 clock() {
     local CPID=$1 START=$2 name="" tname="" own="" looked="" tick=-1 el sym state size line last="" wait asking
-    TTY=$3 TRANSCRIPT=$4 SESSION=$5 BYTES0=$6 RUNID=$7 FOLDER=$8 BRANCH=$9
+    TTY=$3 TRANSCRIPT=$4 SESSION=$5 BYTES0=$6 RUNID=$7 FOLDER=$8 BRANCH=$9 CWD=${10}
     SECONDS=$(( $(date +%s) - START ))   # bash counts on from here, no process per tick
     while kill -0 "$CPID" 2>/dev/null; do
         current || exit 0                  # a newer turn or the session end has the tab
@@ -177,6 +191,7 @@ clock() {
         [ -e "$RUN/$SESSION.done" ] && state=done
         if [ "$el" != "$tick" ]; then          # once per second
             tick=$el
+            [ $((el % 5)) = 4 ] && refresh_place   # every 5 s
             case $FORMAT in *" topic "*)
                 # Every 15 s: topic() reads the whole transcript, which can be large.
                 { [ $((el % 15)) = 0 ] || [ -z "$looked" ]; } && { tname=$(topic); looked=1; }
@@ -198,6 +213,7 @@ clock() {
                 fi ;;
             *) sym=◐ ;;
         esac
+        [ "$sym" = ✳ ] && refresh_place     # the final title shows where the turn ended
         mmss "$el"
         render "$sym $CLK"; line=$LINE
         if [ "$line" != "$last" ]; then
@@ -289,11 +305,13 @@ case $EVENT in
         rm -f "$RUN/$SESSION.done"
         echo working > "$RUN/$SESSION.state"
         bytes=$(wc -c < "$TRANSCRIPT" 2>/dev/null || echo 0)
-        IFS=$'\037' read -r folder branch <<< "$(place "$(field cwd)")"
+        cwd=$(field cwd)
+        p=$(place "$cwd")                   # outside the read: IFS must not reach place()
+        IFS=$'\037' read -r folder branch <<< "$p"
         # Detached, every stream closed: the hook must return at once.
         detach=nohup
         command -v setsid > /dev/null && detach=setsid
-        $detach bash "$0" clock "$cpid" "$(date +%s)" "$TTY" "$TRANSCRIPT" "$SESSION" "${bytes// /}" "$runid" "$folder" "$branch" \
+        $detach bash "$0" clock "$cpid" "$(date +%s)" "$TTY" "$TRANSCRIPT" "$SESSION" "${bytes// /}" "$runid" "$folder" "$branch" "$cwd" \
             < /dev/null > /dev/null 2>&1 &
         # Haiku names the session once, from the first prompt that says
         # something: not a slash command, not a one-word greeting, and only if

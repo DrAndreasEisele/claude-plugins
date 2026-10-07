@@ -197,5 +197,7 @@ Back up, write — the changes from step 2 and `TAB_CLOCK_FORMAT` from step 3
 |---|---|---|
 
 listing only what actually happened, and one line:
-**Open a new terminal tab and start a new session there** — running sessions
-keep the format and title they started with.
+- after changes from step 2: **Open a new terminal tab and start a new
+  session there** — sessions started before keep Claude Code's own title;
+- after a format change only: **The tab shows the new format from your next
+  prompt on.**
