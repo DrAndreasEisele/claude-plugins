@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # tab-clock — state and running time of a Claude Code session in the terminal tab.
 #
-#   ◐ 1:31 · Topic    Claude is working, for 1 min 31 s so far
-#   ⏸ 1:31 · Topic    Claude is waiting for you (a permission prompt)
-#   ✳ 2:30 · Topic    done; the last answer took 2:30
+#   ◐ 1:31 · Folder · Topic    Claude is working, for 1 min 31 s so far
+#   ⏸ 1:31 · Folder · Topic    Claude is waiting for you (a permission prompt)
+#   ✳ 2:30 · Folder · Topic    done; the last answer took 2:30
+#
+# Folder is the project folder of the session. Topic is the session name, and
+# appears only when there is one: Claude Code writes its automatic title only
+# now and then while its own tab title is off.
 #
 # Entry point for the hooks (UserPromptSubmit, Notification, Stop, StopFailure,
 # SessionEnd) and, started from UserPromptSubmit, the clock itself:
@@ -46,7 +50,7 @@ topic() {
         sed -nE 's/.*"aiTitle":"(([^"\\]|\\.)*)".*/\1/p')
     # JSON escapes: \" becomes a quote again, escaped control characters go.
     t=$(printf '%s' "$t" | sed -E 's/\\u00[01][0-9a-fA-F]//g; s/\\(["\\/])/\1/g')
-    printf '%s' "${t:0:40}"   # VS Code cuts long tab titles; keep the clock visible
+    printf '%s' "${t:0:30}"   # VS Code cuts long tab titles; keep the clock visible
 }
 
 # Was the turn stopped with Esc? That fires no Stop hook; Claude Code only
@@ -97,8 +101,8 @@ current() {
 }
 
 clock() {
-    local CPID=$1 START=$2 name="" tick=-1 el sym state size line last=""
-    TTY=$3 TRANSCRIPT=$4 SESSION=$5 BYTES0=$6 RUNID=$7
+    local CPID=$1 START=$2 name="" looked="" tick=-1 el sym state size line last=""
+    TTY=$3 TRANSCRIPT=$4 SESSION=$5 BYTES0=$6 RUNID=$7 FOLDER=$8
     SECONDS=$(( $(date +%s) - START ))   # bash counts on from here, no process per tick
     while kill -0 "$CPID" 2>/dev/null; do
         current || exit 0                  # a newer turn or the session end has the tab
@@ -108,7 +112,8 @@ clock() {
         [ -e "$RUN/$SESSION.done" ] && state=done
         if [ "$el" != "$tick" ]; then          # once per second
             tick=$el
-            { [ $((el % 15)) = 0 ] || [ -z "$name" ]; } && name=$(topic)
+            # Every 15 s: topic() reads the whole transcript, which can be large.
+            { [ $((el % 15)) = 0 ] || [ -z "$looked" ]; } && { name=$(topic); looked=1; }
             [ "$state" = done ] || { interrupted && state=done; }
         fi
         case $state in
@@ -125,7 +130,7 @@ clock() {
             *) sym=◐ ;;
         esac
         mmss "$el"
-        line="$sym $CLK${name:+ · $name}"
+        line="$sym $CLK${FOLDER:+ · $FOLDER}${name:+ · $name}"
         if [ "$line" != "$last" ]; then
             current || exit 0              # checked again: topic() may have taken a while
             title "$line"; last=$line
@@ -166,10 +171,13 @@ case $EVENT in
         rm -f "$RUN/$SESSION.done"
         echo working > "$RUN/$SESSION.state"
         bytes=$(wc -c < "$TRANSCRIPT" 2>/dev/null || echo 0)
+        cwd=$(field cwd)
+        folder=${cwd##*/}
+        [ "$cwd" = "$HOME" ] && folder="~"
         # Detached, every stream closed: the hook must return at once.
         detach=nohup
         command -v setsid > /dev/null && detach=setsid
-        $detach bash "$0" clock "$cpid" "$(date +%s)" "$TTY" "$TRANSCRIPT" "$SESSION" "${bytes// /}" "$runid" \
+        $detach bash "$0" clock "$cpid" "$(date +%s)" "$TTY" "$TRANSCRIPT" "$SESSION" "${bytes// /}" "$runid" "${folder:0:24}" \
             < /dev/null > /dev/null 2>&1 &
         ;;
     Notification)
