@@ -4,9 +4,9 @@ Shows in the terminal tab what Claude is doing, and for how long:
 
 | Tab | Meaning |
 |---|---|
-| `◐ 1:31 · Topic` | Claude is working, for 1 min 31 s so far |
-| `⏸ 1:31 · Topic` | Claude is waiting for you, e.g. to approve a command |
-| `✳ 2:30 · Topic` | done; the last answer took 2 min 30 s |
+| `◐ 1:31 · Website · Topic` | Claude is working, for 1 min 31 s so far |
+| `⏸ 1:31 · Website · Topic` | Claude is waiting for you, e.g. to approve a command |
+| `✳ 2:30 · Website · Topic` | done; the last answer took 2 min 30 s |
 
 <table>
   <tr>
@@ -77,7 +77,12 @@ reopen them later — keep showing Claude Code's own title without a clock.
 
 - The clock counts in whole seconds from the moment you send the prompt; it
   can differ from Claude's own "Worked for …" by up to one second.
-- It recognises Esc and the session topic from the entries Claude Code writes
+- After the clock comes the project folder — in a git worktree `repo/worktree`,
+  e.g. `Website/feature-x` — then the session name. The name
+  appears when you set one with `/rename`; Claude Code's automatic title only
+  now and then, because Claude Code rarely writes it while its own tab title
+  is off.
+- It recognises Esc and the session name from the entries Claude Code writes
   to its transcript. If a Claude Code update changes that format, at worst the
   topic is missing, or after Esc the clock keeps running until your next
   prompt.

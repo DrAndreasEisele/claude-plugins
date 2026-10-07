@@ -1,7 +1,7 @@
 ---
 name: setup
 description: This skill should be used when the user wants to switch on the tab-clock plugin — "set up tab-clock", "show Claude's status in my terminal tab", "show a timer in the tab", "richte die Tab-Uhr ein". It finds the user's setup, makes the one-time settings the plugin cannot make by itself after a single confirmation, and ends with a list of every change.
-version: 0.3.1
+version: 0.3.2
 ---
 
 # Set up tab-clock
@@ -13,9 +13,9 @@ is doing and for how long:
 
 | Tab | Meaning |
 |---|---|
-| `◐ 1:31 · Topic` | Claude is working, for 1 min 31 s so far |
-| `⏸ 1:31 · Topic` | Claude is waiting for you, e.g. to approve a command |
-| `✳ 2:30 · Topic` | done; the last answer took 2 min 30 s |
+| `◐ 1:31 · Website · Topic` | Claude is working, for 1 min 31 s so far |
+| `⏸ 1:31 · Website · Topic` | Claude is waiting for you, e.g. to approve a command |
+| `✳ 2:30 · Website · Topic` | done; the last answer took 2 min 30 s |
 
 The plugin already brings the part that runs the clock. Up to three settings
 live outside the plugin, in the user's own files; this skill makes them.
@@ -117,17 +117,15 @@ The function steps aside by itself once a) is undone.
 
 ### 2. Confirm once
 
-Show only the changes still needed, then ask the single question:
+Use this text as the question itself, with only the changes still needed.
+Write it as plain lines, exactly in this shape — **no table and no code
+block**: the question box shows them unformatted, with every `|` visible.
 
 ```
 Please confirm — tab-clock makes these changes so the tab shows Claude's status with a clock:
-
-| File | Change |
-|---|---|
-| ~/.claude/settings.json | Claude Code's own tab title off — the plugin writes it instead |
-| <VS Code file> | VS Code shows the title the program sets |
-| ~/.bashrc | new tabs show "✳ Claude Code" before the first prompt |
-
+• ~/.claude/settings.json — Claude Code's own tab title off; the plugin writes it instead
+• <VS Code file> — VS Code shows the title the program sets
+• ~/.bashrc — new tabs show "✳ Claude Code" before the first prompt
 Backups first; /tab-clock:remove undoes everything. Claude Code may ask once more per file.
 ```
 
