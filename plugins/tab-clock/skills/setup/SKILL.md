@@ -1,7 +1,7 @@
 ---
 name: setup
 description: This skill should be used when the user wants to switch on the tab-clock plugin — "set up tab-clock", "show Claude's status in my terminal tab", "show a timer in the tab", "richte die Tab-Uhr ein". It finds the user's setup, makes the one-time settings the plugin cannot make by itself after a single confirmation, and ends with a list of every change.
-version: 0.4.0
+version: 0.4.1
 ---
 
 # Set up tab-clock
@@ -162,26 +162,31 @@ On `Cancel`, change nothing and stop; step 3 is not asked.
 One question, single choice, with this text:
 
 ```
-What should the tab show, and in which order?
+How should the tab look?
+
 Topic: Claude uses the Haiku model to derive a short, meaningful title for the session.
 Branch: shown only when it is not main or master.
+Your own order: type the blocks, e.g. topic clock folder
 ```
 
 When setup runs again on a finished setup, start the text with
 `Current: <current format as an example line>` and offer `Keep as is` as the
-first option.
+first option, with the current example line as its description. Keep the
+empty line right after the question line.
 
-Options: the label names the blocks, the description shows an example line of
-the tab — with the word `Topic` standing for the title, never an invented
-one, which would read like a real setting. **No `preview` field**: a preview box squeezes the options into a
-narrow column and cuts the example off. Mark the first option recommended,
-but only on a first setup — on a rerun, `Keep as is` comes first unmarked.
+Options: **the label is the example line of the tab** — what the user picks
+is what they will see — and the description names the blocks in words, which
+also teaches the words for a free answer. Use `Topic` for the title, never
+an invented one, which would read like a real setting. **No `preview`
+field**: a preview box squeezes the options into a narrow column and cuts the
+example off. Mark the first option recommended, but only on a first setup —
+on a rerun, `Keep as is` comes first unmarked.
 
 | Label | Description | `TAB_CLOCK_FORMAT` |
 |---|---|---|
-| `Clock · folder · branch · topic` | `◐ 1:31 · Website ⎇ dev · Topic` | `clock folder branch topic` |
-| `Clock · topic · folder · branch` | `◐ 1:31 · Topic · Website ⎇ dev` | `clock topic folder branch` |
-| `Clock · folder · branch` | `◐ 1:31 · Website ⎇ dev — no topic, Haiku is never asked` | `clock folder branch` |
+| `◐ 1:31 · Website ⎇ dev · Topic` | `clock · folder · branch · topic` | `clock folder branch topic` |
+| `◐ 1:31 · Topic · Website ⎇ dev` | `clock · topic · folder · branch` | `clock topic folder branch` |
+| `◐ 1:31 · Website ⎇ dev` | `clock · folder · branch — no topic, Haiku is never asked` | `clock folder branch` |
 
 The question box also offers a free answer: there the user names the blocks
 in their own order, e.g. `topic clock folder`. Accept `clock`, `folder`,
