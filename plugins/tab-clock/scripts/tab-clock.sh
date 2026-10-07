@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
 # tab-clock — state and running time of a Claude Code session in the terminal tab.
 #
-#   ◐ 1:31 · Folder · Topic    Claude is working, for 1 min 31 s so far
-#   ⏸ 1:31 · Folder · Topic    Claude is waiting for you (a permission prompt)
-#   ✳ 2:30 · Folder · Topic    done; the last answer took 2:30
+#   ◐ 1:31 · Website ⎇ feature · Topic    Claude is working, 1 min 31 s so far
+#   ⏸ 1:31 · Website ⎇ feature · Topic    Claude is waiting for you
+#   ✳ 2:30 · Website ⎇ feature · Topic    done; the last answer took 2:30
 #
-# Folder is the project folder of the session, "repo/worktree" in a git
-# worktree, followed by "⎇ branch" unless the branch is main or master.
-# Topic is the session name: one set with /rename, else Claude Code's
-# automatic title, else a short title Haiku makes from the first prompt (see
-# make_topic). Claude Code writes its automatic title only now and then while
-# its own tab title is off, so the last one is the usual case.
-# TAB_CLOCK_TOPIC=off (in the env block of ~/.claude/settings.json) switches
-# the Haiku title off.
+# Four blocks, shown in the order of TAB_CLOCK_FORMAT (env block of
+# ~/.claude/settings.json; default "clock folder branch topic"); a block left
+# out is not shown:
+#   clock   state symbol and running time — always shown, first if missing
+#   folder  project folder of the session; "repo/worktree" in a git worktree
+#   branch  "⎇ branch" when it is not main or master; joins the folder
+#           directly when it follows it
+#   topic   session name: one set with /rename, else Claude Code's automatic
+#           title, else a short title Haiku makes from the first prompt (see
+#           make_topic). Claude Code writes its automatic title only now and
+#           then while its own tab title is off, so the last is the usual case.
+#           Without "topic" in the format, Haiku is never asked.
 #
 # Entry point for the hooks (UserPromptSubmit, Notification, Stop, StopFailure,
 # SessionEnd) and, started from UserPromptSubmit, the clock itself:
@@ -45,6 +49,33 @@ mmss() {
     fi
 }
 
+# The blocks to show, in order; "clock" is added in front if missing.
+FORMAT=" ${TAB_CLOCK_FORMAT:-clock folder branch topic} "
+case $FORMAT in *" clock "*) ;; *) FORMAT=" clock$FORMAT" ;; esac
+
+# Sets $LINE from the blocks in $FORMAT. $1 is the clock block ("◐ 1:31").
+# Blocks are joined with " · "; a branch right after the folder joins it with
+# a space: "Website ⎇ feature".
+render() {
+    local part v prev=""
+    LINE=""
+    for part in $FORMAT; do
+        case $part in
+            clock) v=$1 ;;
+            folder) v=$FOLDER ;;
+            branch) v=${BRANCH:+⎇ $BRANCH} ;;
+            topic) v=$name ;;
+            *) v="" ;;
+        esac
+        [ -n "$v" ] || continue
+        if [ -z "$LINE" ]; then LINE=$v
+        elif [ "$part" = branch ] && [ "$prev" = folder ]; then LINE="$LINE $v"
+        else LINE="$LINE · $v"
+        fi
+        prev=$part
+    done
+}
+
 # The session name, as Claude Code itself would show it: a name set with
 # /rename wins over the automatic topic title.
 topic() {
@@ -58,10 +89,11 @@ topic() {
     printf '%s' "${t:0:30}"   # VS Code cuts long tab titles; keep the clock visible
 }
 
-# The project folder for the tab. In a git worktree "repo/worktree": the
-# folder name alone would not say which repository it belongs to. A branch
-# other than main or master follows as "⎇ branch", so a switched checkout is
-# visible at a glance. Reads .git and HEAD directly; no git process needed.
+# Project folder and branch for the tab, as "<folder>\037<branch>". In a git
+# worktree the folder is "repo/worktree": the folder name alone would not say
+# which repository it belongs to. The branch only when it is not main or
+# master, so a switched checkout is visible at a glance. Reads .git and HEAD
+# directly; no git process needed.
 place() {
     local dir=$1 d=$1 name gitdir="" repo head="" branch=""
     name=${dir##*/}
@@ -83,7 +115,7 @@ place() {
         case $head in "ref: refs/heads/"*) branch=${head#ref: refs/heads/} ;; esac
         case $branch in main | master | "${d##*/}") branch="" ;; esac
     fi
-    printf '%s%s' "${name:0:30}" "${branch:+ ⎇ ${branch:0:24}}"
+    printf '%s\037%s' "${name:0:30}" "${branch:0:24}"
 }
 
 # Was the turn stopped with Esc? That fires no Stop hook; Claude Code only
@@ -135,7 +167,7 @@ current() {
 
 clock() {
     local CPID=$1 START=$2 name="" tname="" own="" looked="" tick=-1 el sym state size line last="" wait asking
-    TTY=$3 TRANSCRIPT=$4 SESSION=$5 BYTES0=$6 RUNID=$7 FOLDER=$8
+    TTY=$3 TRANSCRIPT=$4 SESSION=$5 BYTES0=$6 RUNID=$7 FOLDER=$8 BRANCH=$9
     SECONDS=$(( $(date +%s) - START ))   # bash counts on from here, no process per tick
     while kill -0 "$CPID" 2>/dev/null; do
         current || exit 0                  # a newer turn or the session end has the tab
@@ -145,10 +177,12 @@ clock() {
         [ -e "$RUN/$SESSION.done" ] && state=done
         if [ "$el" != "$tick" ]; then          # once per second
             tick=$el
-            # Every 15 s: topic() reads the whole transcript, which can be large.
-            { [ $((el % 15)) = 0 ] || [ -z "$looked" ]; } && { tname=$(topic); looked=1; }
-            [ -n "$tname" ] || { read -r own < "$RUN/$SESSION.topic"; } 2>/dev/null
-            name=${tname:-$own}
+            case $FORMAT in *" topic "*)
+                # Every 15 s: topic() reads the whole transcript, which can be large.
+                { [ $((el % 15)) = 0 ] || [ -z "$looked" ]; } && { tname=$(topic); looked=1; }
+                [ -n "$tname" ] || { read -r own < "$RUN/$SESSION.topic"; } 2>/dev/null
+                name=${tname:-$own} ;;
+            esac
             [ "$state" = done ] || { interrupted && state=done; }
         fi
         case $state in
@@ -165,7 +199,7 @@ clock() {
             *) sym=◐ ;;
         esac
         mmss "$el"
-        line="$sym $CLK${FOLDER:+ · $FOLDER}${name:+ · $name}"
+        render "$sym $CLK"; line=$LINE
         if [ "$line" != "$last" ]; then
             current || exit 0              # checked again: topic() may have taken a while
             title "$line"; last=$line
@@ -176,12 +210,12 @@ clock() {
     [ "$sym" = ✳ ] || title ""   # Claude is gone without an answer: free the tab
     # A short first answer can end before Haiku has named the session: wait
     # for the title a little longer, then write it next to the final time.
-    if [ "$sym" = ✳ ] && [ -z "$name" ] && [ -e "$RUN/$SESSION.asked" ]; then
+    if [ "$sym" = ✳ ] && [ -z "$name" ] && [ -e "$RUN/$SESSION.asked" ]; then   # only with "topic"
         for wait in $(seq 40); do
             current && kill -0 "$CPID" 2>/dev/null || break
             [ -e "$RUN/$SESSION.asked" ]; asking=$?   # gone: Haiku has finished
             { read -r own < "$RUN/$SESSION.topic"; } 2>/dev/null
-            [ -n "$own" ] && { title "$sym $CLK${FOLDER:+ · $FOLDER} · $own"; break; }
+            [ -n "$own" ] && { name=$own; render "$sym $CLK"; title "$LINE"; break; }
             [ "$asking" = 0 ] || break
             sleep 0.5
         done
@@ -214,6 +248,7 @@ make_topic() {
     if [ "${#t}" -gt 30 ]; then
         t=${t:0:31}
         case $t in *" "*) t=${t% *} ;; *) t=${t:0:30} ;; esac
+        t=$(printf '%s' "$t" | sed -E 's/[[:space:]:;,.-]+$//')   # no "Login form:"
     fi
     if [ -n "$t" ] && [ -e "$SESSION.asked" ]; then   # the session may have ended meanwhile
         printf '%s\n' "$t" > "$SESSION.topic.$$" && mv -f "$SESSION.topic.$$" "$SESSION.topic"
@@ -254,16 +289,16 @@ case $EVENT in
         rm -f "$RUN/$SESSION.done"
         echo working > "$RUN/$SESSION.state"
         bytes=$(wc -c < "$TRANSCRIPT" 2>/dev/null || echo 0)
-        folder=$(place "$(field cwd)")
+        IFS=$'\037' read -r folder branch <<< "$(place "$(field cwd)")"
         # Detached, every stream closed: the hook must return at once.
         detach=nohup
         command -v setsid > /dev/null && detach=setsid
-        $detach bash "$0" clock "$cpid" "$(date +%s)" "$TTY" "$TRANSCRIPT" "$SESSION" "${bytes// /}" "$runid" "$folder" \
+        $detach bash "$0" clock "$cpid" "$(date +%s)" "$TTY" "$TRANSCRIPT" "$SESSION" "${bytes// /}" "$runid" "$folder" "$branch" \
             < /dev/null > /dev/null 2>&1 &
         # Haiku names the session once, from the first prompt that says
         # something: not a slash command, not a one-word greeting, and only if
-        # the session has no title yet.
-        if [ "${TAB_CLOCK_TOPIC:-on}" != off ] && [ ! -e "$RUN/$SESSION.topic" ] &&
+        # the session has no title yet — and only if the tab shows the topic.
+        if [ "${FORMAT/ topic /}" != "$FORMAT" ] && [ ! -e "$RUN/$SESSION.topic" ] &&
             [ ! -e "$RUN/$SESSION.asked" ] && command -v claude > /dev/null &&
             ! grep -qaE '"type":"(custom|ai)-title"' "$TRANSCRIPT" 2>/dev/null; then
             prompt=$(printf '%s' "$payload" | sed -nE 's/.*"prompt" *: *"(([^"\\]|\\.)*)".*/\1/p' | head -n 1 |
