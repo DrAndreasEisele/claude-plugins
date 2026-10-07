@@ -172,14 +172,15 @@ When setup runs again on a finished setup, start the text with
 first option.
 
 Options: the label names the blocks, the description shows an example line of
-the tab. **No `preview` field**: a preview box squeezes the options into a
+the tab — with the word `Topic` standing for the title, never an invented
+one, which would read like a real setting. **No `preview` field**: a preview box squeezes the options into a
 narrow column and cuts the example off. Mark the first option recommended,
 but only on a first setup — on a rerun, `Keep as is` comes first unmarked.
 
 | Label | Description | `TAB_CLOCK_FORMAT` |
 |---|---|---|
-| `Clock · folder · branch · topic` | `◐ 1:31 · Website ⎇ dev · Login form` | `clock folder branch topic` |
-| `Clock · topic · folder · branch` | `◐ 1:31 · Login form · Website ⎇ dev` | `clock topic folder branch` |
+| `Clock · folder · branch · topic` | `◐ 1:31 · Website ⎇ dev · Topic` | `clock folder branch topic` |
+| `Clock · topic · folder · branch` | `◐ 1:31 · Topic · Website ⎇ dev` | `clock topic folder branch` |
 | `Clock · folder · branch` | `◐ 1:31 · Website ⎇ dev — no topic, Haiku is never asked` | `clock folder branch` |
 
 The question box also offers a free answer: there the user names the blocks
