@@ -4,9 +4,9 @@ Shows in the terminal tab what Claude is doing, and for how long:
 
 | Tab | Meaning |
 |---|---|
-| `◐ 1:31 · Website · Topic` | Claude is working, for 1 min 31 s so far |
-| `⏸ 1:31 · Website · Topic` | Claude is waiting for you, e.g. to approve a command |
-| `✳ 2:30 · Website · Topic` | done; the last answer took 2 min 30 s |
+| `◐ 1:31 · Website ⎇ feature · Topic` | Claude is working, for 1 min 31 s so far |
+| `⏸ 1:31 · Website ⎇ feature · Topic` | Claude is waiting for you, e.g. to approve a command |
+| `✳ 2:30 · Website ⎇ feature · Topic` | done; the last answer took 2 min 30 s |
 
 <table>
   <tr>
@@ -44,8 +44,9 @@ Then start `claude`, open a session and run:
 ```
 
 Setup finds out which of three one-time settings outside the plugin are
-still needed, asks you **once** to confirm them, backs up every file, and lists
-all changes at the end:
+still needed, asks you **once** to confirm them, then which blocks the tab
+shows and in which order. It backs up every file and lists all changes at the
+end:
 
 | Setting | Why |
 |---|---|
@@ -77,12 +78,26 @@ reopen them later — keep showing Claude Code's own title without a clock.
 
 - The clock counts in whole seconds from the moment you send the prompt; it
   can differ from Claude's own "Worked for …" by up to one second.
-- After the clock comes the project folder — in a git worktree `repo/worktree`,
-  e.g. `Website/feature-x`, and `⎇ branch` when the branch is not `main` or
-  `master` — then the session name. The name
-  appears when you set one with `/rename`; Claude Code's automatic title only
-  now and then, because Claude Code rarely writes it while its own tab title
-  is off.
+- **What the tab shows, and in which order, is yours to choose** in setup:
+  from the blocks clock, folder, branch and topic, e.g.
+  `◐ 1:31 · Website ⎇ feature · Login form errors` (the default) or
+  `◐ 1:31 · Login form errors · Website ⎇ feature`. Run `/tab-clock:setup`
+  again to change it; it is stored as `TAB_CLOCK_FORMAT` in the `env` block of
+  `~/.claude/settings.json`.
+  - **folder:** the project folder; in a git worktree `repo/worktree`, e.g.
+    `Website/feature-x`.
+  - **branch:** `⎇ branch`, only when it is not `main` or `master`.
+  - Folder and branch follow along while Claude works: a branch switch or a
+    move into a worktree shows within about 5 seconds.
+  - **topic:** a name you set with `/rename` wins, then Claude Code's
+    automatic title. Claude Code rarely writes that one while its own tab
+    title is off, so the plugin asks **Haiku** once per session for a short
+    title from your first prompt (slash commands and very short prompts are
+    skipped). This is a separate `claude -p` call with your own login: no
+    tools, no hooks, no MCP servers, not saved as a session; about 4,000
+    tokens (≈ 0.1 cent), 2–5 s. After a short first answer the tab adds the
+    title as soon as it arrives. Without `topic` in the format, Haiku is never
+    asked.
 - It recognises Esc and the session name from the entries Claude Code writes
   to its transcript. If a Claude Code update changes that format, at worst the
   topic is missing, or after Esc the clock keeps running until your next
@@ -103,11 +118,11 @@ reopen them later — keep showing Claude Code's own title without a clock.
 |---|---|---|
 | `<plugin folder>/hooks/hooks.json` | **the hooks:** run the script when you send a prompt, when Claude waits for you, finishes or stops on an error, or the session ends | plugin install |
 | `<plugin folder>/scripts/tab-clock.sh` | sets the tab title, runs the clock | plugin install |
-| `~/.claude/settings.json` → `env.CLAUDE_CODE_DISABLE_TERMINAL_TITLE` | Claude Code's own tab title off | `/tab-clock:setup` |
+| `~/.claude/settings.json` → `env.CLAUDE_CODE_DISABLE_TERMINAL_TITLE`, `env.TAB_CLOCK_FORMAT` | Claude Code's own tab title off; what the tab shows, in which order | `/tab-clock:setup` |
 | VS Code user `settings.json` → `terminal.integrated.tabs.title`, `terminal.integrated.tabs.description` (Remote-SSH: the remote's `~/.vscode-server/data/Machine/settings.json`) | tabs show the title a program sets; the description drops the folder, which the title already shows — VS Code users only | `/tab-clock:setup` |
 | `~/.zshrc` or `~/.bashrc`, block between `# >>> tab-clock >>>` and `# <<< tab-clock <<<` | names a new tab before the first prompt | `/tab-clock:setup` |
 | `<file>.bak-tab-clock-<time>` next to each changed file | backup before every change | setup and remove |
-| `$TMPDIR/tab-clock-<user id>/<session>.run`, `.state`, `.done` (Linux usually `/tmp/…`) | current turn and state of a running session; deleted when the turn or session ends | the hooks and the clock, while they run |
+| `$TMPDIR/tab-clock-<user id>/<session>.run`, `.state`, `.done`, `.topic` (Linux usually `/tmp/…`) | current turn and state of a running session, and the Haiku title; deleted when the turn or session ends | the hooks and the clock, while they run |
 
 `/tab-clock:remove` takes out the settings and the shell block; it asks about
 the VS Code setting, which may have been there before. `<plugin folder>` is

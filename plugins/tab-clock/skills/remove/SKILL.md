@@ -1,7 +1,7 @@
 ---
 name: remove
 description: This skill should be used when the user wants to switch off or remove the tab-clock plugin — "remove tab-clock", "turn off the tab timer", "undo tab-clock setup", "Tab-Uhr entfernen". It undoes exactly what the setup skill changed, nothing else, and ends with a list of every change.
-version: 0.3.4
+version: 0.4.0
 ---
 
 # Remove tab-clock
@@ -10,9 +10,9 @@ Undo the settings from `/tab-clock:setup`. Write to the user in English,
 briefly. Show each change and ask before writing; back up every file first as
 `<file>.bak-tab-clock-<YYYYMMDD-HHMMSS>`. Remove only what setup added.
 
-1. **`~/.claude/settings.json`:** delete the key
-   `CLAUDE_CODE_DISABLE_TERMINAL_TITLE` from `env`; remove `env` itself only
-   if it is empty afterwards. *Why: Claude Code then writes its own tab title
+1. **`~/.claude/settings.json`:** delete the keys
+   `CLAUDE_CODE_DISABLE_TERMINAL_TITLE` and `TAB_CLOCK_FORMAT` from `env`;
+   remove `env` itself only if it is empty afterwards. *Why: Claude Code then writes its own tab title
    again — spinner and topic, without the clock.*
 2. **Shell file** (`~/.zshrc` or `~/.bashrc`): delete the block from
    `# >>> tab-clock >>>` to `# <<< tab-clock <<<`, markers included. If the

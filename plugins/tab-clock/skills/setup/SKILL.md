@@ -1,7 +1,7 @@
 ---
 name: setup
 description: This skill should be used when the user wants to switch on the tab-clock plugin — "set up tab-clock", "show Claude's status in my terminal tab", "show a timer in the tab", "richte die Tab-Uhr ein". It finds the user's setup, makes the one-time settings the plugin cannot make by itself after a single confirmation, and ends with a list of every change.
-version: 0.3.4
+version: 0.4.0
 ---
 
 # Set up tab-clock
@@ -25,10 +25,12 @@ live outside the plugin, in the user's own files; this skill makes them.
 The user reads terminal output all day. Keep every message short: no
 introductions, no explanations beyond the one line per change given below.
 
-- **Find out everything yourself first** (steps 0 and 1), then ask **once**.
-- Ask with **one single question** — AskUserQuestion with exactly one
-  question, options `Yes, make these changes` and `Cancel`. Never a form with
-  several questions or steps.
+- **Find out everything yourself first** (steps 0 and 1), then ask.
+- At most **two questions, one after the other**: first confirm the changes
+  (step 2), then choose the tab format (step 3). Each is AskUserQuestion with
+  exactly **one** question — never a form with several questions or steps.
+- Running setup again is the way to change the format later: then only
+  step 3 is asked.
 - **Back up every file before writing it**, as
   `<file>.bak-tab-clock-<YYYYMMDD-HHMMSS>` — all backups in one command.
   Merge into files; never overwrite them wholesale.
@@ -127,12 +129,19 @@ claude() {
 
 The function steps aside by itself once a) is undone.
 
-### 2. Confirm once
+**d) Tab format** — `~/.claude/settings.json`, `env` key
+`TAB_CLOCK_FORMAT`: the blocks to show, in order, separated by spaces, from
+`clock`, `folder`, `branch`, `topic`. Missing counts as
+`clock folder branch topic`. Not a change of its own: step 3 sets it.
+
+### 2. Confirm the changes
+
+Skip this step when a), b) and c) are all in place.
 
 Use this text as the question itself, with only the changes a) and b) still
-needed; c) goes with a) without a line of its own.
-Write it as plain lines, exactly in this shape — **no table and no code
-block**: the question box shows them unformatted, with every `|` visible.
+needed; c) goes with a) without a line of its own. Write it as plain lines,
+exactly in this shape — **no table and no code block**: the question box
+shows them unformatted, with every `|` visible.
 
 ```
 Please confirm — tab-clock makes these changes so the tab shows Claude's status with a clock:
@@ -141,20 +150,54 @@ Please confirm — tab-clock makes these changes so the tab shows Claude's statu
 Backups first; /tab-clock:remove undoes everything. Claude Code may ask once more per file.
 ```
 
-Only if c) is the one change still needed, give it its own line instead:
+Options: `Yes, make these changes`, `Cancel`. Only if c) is the one change
+still needed, give it its own line instead:
 `• ~/.zshrc — new tabs show "✳ Claude Code" before the first prompt` (or
 `~/.bashrc`).
 
-On `Cancel`, change nothing and stop. If nothing is needed, say in one line
-that tab-clock is already set up.
+On `Cancel`, change nothing and stop; step 3 is not asked.
 
-### 3. Make the changes, then summarise
+### 3. Choose the tab format
 
-Back up, write, then end with:
+One question, single choice, with this text:
+
+```
+What should the tab show, and in which order?
+Topic: Claude uses the Haiku model to derive a short, meaningful title for the session.
+Branch: shown only when it is not main or master.
+```
+
+When setup runs again on a finished setup, start the text with
+`Current: <current format as an example line>` and offer `Keep as is` as the
+first option.
+
+Options: the label names the blocks, the description shows an example line of
+the tab — with the word `Topic` standing for the title, never an invented
+one, which would read like a real setting. **No `preview` field**: a preview box squeezes the options into a
+narrow column and cuts the example off. Mark the first option recommended,
+but only on a first setup — on a rerun, `Keep as is` comes first unmarked.
+
+| Label | Description | `TAB_CLOCK_FORMAT` |
+|---|---|---|
+| `Clock · folder · branch · topic` | `◐ 1:31 · Website ⎇ dev · Topic` | `clock folder branch topic` |
+| `Clock · topic · folder · branch` | `◐ 1:31 · Topic · Website ⎇ dev` | `clock topic folder branch` |
+| `Clock · folder · branch` | `◐ 1:31 · Website ⎇ dev — no topic, Haiku is never asked` | `clock folder branch` |
+
+The question box also offers a free answer: there the user names the blocks
+in their own order, e.g. `topic clock folder`. Accept `clock`, `folder`,
+`branch`, `topic` in any order, each at most once; leave out unknown words.
+If `clock` is missing, put it first and say so in the summary.
+
+### 4. Make the changes, then summarise
+
+Back up, write — the changes from step 2 and `TAB_CLOCK_FORMAT` from step 3
+— then end with:
 
 | File | Change | Backup |
 |---|---|---|
 
 listing only what actually happened, and one line:
-**Open a new terminal tab and start a new session there** — sessions started
-before setup keep Claude Code's own title.
+- after changes from step 2: **Open a new terminal tab and start a new
+  session there** — sessions started before keep Claude Code's own title;
+- after a format change only: **The tab shows the new format from your next
+  prompt on.**
