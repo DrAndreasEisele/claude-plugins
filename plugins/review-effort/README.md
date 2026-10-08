@@ -43,6 +43,37 @@ session.
   vs. `~6 min` as "quick look" vs. "plan time for it".
 - Answers shorter than 150 words get no line.
 
+## Review Effort Analysis
+
+```
+/review-effort:analysis
+```
+
+Reads your Claude Code sessions of the last 28 days on this computer and opens
+one page that shows where the time around your requests goes:
+
+- **Reading Effort Estimation:** the reading time Claude's answers ask for,
+  counted like the line above
+- **Waiting:** Claude working on your request
+- **Thinking & other:** the rest of the pause before your next prompt, at
+  most 10 minutes per request, so multitasking cannot inflate it
+
+The page shows the daily medians as a ring, one bar per day (no dates), and
+three statements from fixed rules:
+
+| Statement | Based on |
+|---|---|
+| Reading or waiting is your larger block | share of requests where reading takes longer than Claude's answer |
+| How many sessions in parallel pay off | median reading time vs. median time Claude needs per answer |
+| Whether you read long answers to the end | answers over 300 words that got a reply before half their reading time |
+
+Needs `python3`, but not setup. The page is written to
+`~/.claude/review-effort/analysis.html` and replaced on the next run; say
+**delete** after the analysis and Claude removes it. It holds
+minutes per day and the figures behind the statements, no dates, prompts or
+answer texts. In an SSH session nothing opens; copy the page to your computer
+and open it there.
+
 ## Settings
 
 `~/.claude/review-effort/config`, one value per line:
@@ -76,7 +107,8 @@ you run setup again. **Remove completely:** also run
 
 ## Privacy
 
-The hook logs nothing and sends nothing. While a long answer streams in, it
+The hook logs nothing and sends nothing. The analysis reads the session logs
+on your machine read-only and sends nothing either. While a long answer streams in, the hook
 keeps a word count in `~/.claude/review-effort/msgs/` and deletes it when the
 answer is complete.
 
@@ -86,7 +118,9 @@ answer is complete.
 |---|---|---|
 | `<plugin folder>/hooks/hooks.json` | **the hook:** runs the script at every answer Claude Code shows | plugin install |
 | `<plugin folder>/scripts/review-effort.sh`, `review_effort.py` | counts the words, adds the line | plugin install |
+| `<plugin folder>/scripts/review_analysis.py`, `review_analysis.html` | the analysis and the template of its page | plugin install |
 | `~/.claude/review-effort/config` | python path, reading speed, shortest answer | `/review-effort:setup` |
+| `~/.claude/review-effort/analysis.html` | the page of the last analysis; replaced on the next run | `/review-effort:analysis` |
 | `~/.claude/review-effort/msgs/` | word count of an answer still streaming in; deleted when it is complete | the hook, while it runs |
 
 Nothing else is changed: no `settings.json`, no shell files, no backups
@@ -100,4 +134,5 @@ README.
 
 | Version | Changes |
 |---|---|
+| 0.2.0 | `analysis`: daily reading, waiting and thinking time from your own sessions, with three statements |
 | 0.1.0 | First release: reading-time line and `setup` with python3 check |

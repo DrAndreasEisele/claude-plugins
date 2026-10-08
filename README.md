@@ -10,7 +10,7 @@ fewer interruptions, less guessing, clearer signals.
 |---|---|
 | [`neuro-ai-fluency`](plugins/neuro-ai-fluency/README.md) | Skills that make Claude's answers easy on attention: a personal, neuro-friendly output style, and a report of your own waiting times with three tiers for what to do meanwhile. |
 | [`tab-clock`](plugins/tab-clock/README.md) | Shows in the terminal tab whether Claude is working, waiting for you, or done — with a running clock. One glance tells you whether switching to another task is worth it. |
-| [`review-effort`](plugins/review-effort/README.md) | Puts the reading time on top of every longer answer, e.g. `🧠 Review Effort: ~3 min`. You see at a glance whether an answer is a quick look or needs a proper review slot. |
+| [`review-effort`](plugins/review-effort/README.md) | Puts the reading time on top of every longer answer, e.g. `🧠 Review Effort: ~3 min`. You see at a glance whether an answer is a quick look or needs a proper review slot. `/review-effort:analysis` shows how much time goes into reading per day and how many sessions in parallel pay off. |
 
 ## Install
 
