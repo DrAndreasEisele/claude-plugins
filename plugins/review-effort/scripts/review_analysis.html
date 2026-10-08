@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Review Effort Analysis. Filled in by review_analysis.py, which puts the figures into the script below. -->
+<title>Review Effort Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap">
+<style>
+/* Layout: one column, ring of the median day with statements below, mirrored day chart (your time above the axis, Claude's below), table on demand */
+/* Brand: navy text, focus blue for reading, amber for waiting (stepped down from #FFC000 so it holds on white), light grey for the rest */
+:root {
+  --bg: #f6f6f5; --surface: #ffffff; --fg: #101c32; --fg-2: #3d4a61; --muted: #6b7587;
+  --grid: #e7e6e6; --axis: #b4b9c2;
+  --read: #0193df; --wait: #d9a100; --rest: #e7e6e6; --rest-ink: #b3b7bd; --on-read: #ffffff; --on-wait: #101c32;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --mono: "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b1322; --surface: #101c32; --fg: #f2f4f7; --fg-2: #c3cad6; --muted: #8a94a6;
+  --grid: #22304a; --axis: #3a4a66;
+  --read: #0193df; --wait: #d9a100; --rest: #2a3852; --rest-ink: #4a5a78; --on-read: #ffffff; --on-wait: #101c32; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0b1322; --surface: #101c32; --fg: #f2f4f7; --fg-2: #c3cad6; --muted: #8a94a6;
+  --grid: #22304a; --axis: #3a4a66;
+  --read: #0193df; --wait: #d9a100; --rest: #2a3852; --rest-ink: #4a5a78; --on-read: #ffffff; --on-wait: #101c32; color-scheme: dark }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
+main { max-width: 980px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 48px; display: grid; gap: 28px; }
+h1 { font-family: var(--display); font-size: 28px; font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+.lede { margin: 6px 0 0; color: var(--fg-2); max-width: 68ch; }
+.sw { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.sw.read { background: var(--read); } .sw.wait { background: var(--wait); }
+.sw.rest { background: repeating-linear-gradient(45deg, var(--rest) 0 3px, var(--rest-ink) 3px 4px); }
+.top h2 { grid-column: 1 / -1; }
+.top { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 20px 36px; align-items: center; background: var(--surface); border: 1px solid var(--grid); border-radius: 6px; padding: 22px 20px; }
+@media (max-width: 680px) { .top { grid-template-columns: minmax(0, 1fr); } }
+#donut { min-width: 0; width: 100%; max-width: 300px; }
+#donut text { font-family: var(--sans); text-anchor: middle; }
+#donut .on-read { fill: var(--on-read); }
+#donut .on-wait { fill: var(--on-wait); }
+#donut .on-rest { fill: var(--fg); paint-order: stroke; stroke: var(--rest); stroke-width: 3px; stroke-linejoin: round; }
+.parts { display: grid; gap: 12px; }
+.part { display: grid; grid-template-columns: 12px 1fr auto; gap: 4px 12px; align-items: baseline; }
+.part .sw { align-self: center; }
+.part .n { font-weight: 500; }
+.part .m { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.part .d { grid-column: 2 / -1; font-size: 13px; color: var(--fg-2); }
+.basis { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.says { display: grid; gap: 10px; }
+.top h2, .says h2, .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; margin: 0; }
+.say { background: var(--surface); border: 1px solid var(--grid); border-radius: 6px; padding: 14px 16px; display: grid; gap: 4px; max-width: 100%; }
+.say b { font-family: var(--display); font-size: 16.5px; font-weight: 700; text-wrap: balance; }
+.say span { color: var(--fg-2); font-size: 14px; max-width: 75ch; }
+.card { background: var(--surface); border: 1px solid var(--grid); border-radius: 6px; padding: 18px 16px 12px; display: grid; gap: 10px; min-width: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--fg-2); }
+.wpm { font-weight: inherit; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.chartwrap { position: relative; overflow-x: auto; }
+svg { display: block; width: 100%; min-width: 620px; height: auto; font-family: var(--mono); }
+svg text { fill: var(--muted); font-size: 11px; }
+svg .side { fill: var(--fg-2); font-family: var(--sans); font-size: 12px; font-weight: 500; }
+svg .gaptxt { fill: var(--muted); font-family: var(--sans); font-size: 12px; }
+.tip { position: absolute; pointer-events: none; background: var(--fg); color: var(--bg); border-radius: 6px; padding: 8px 10px; font-size: 13px; line-height: 1.45; min-width: 190px; transform: translate(-50%, calc(-100% - 10px)); }
+.tip b { font-weight: 600; } .tip .row { display: flex; justify-content: space-between; gap: 14px; font-variant-numeric: tabular-nums; }
+.tip .row i { font-style: normal; display: inline-flex; align-items: center; gap: 6px; }
+.notes { display: grid; gap: 6px; font-size: 13.5px; color: var(--fg-2); max-width: 78ch; }
+.notes p { margin: 0; }
+details { font-size: 13.5px; }
+summary { cursor: pointer; color: var(--fg-2); }
+summary:focus-visible { outline: 2px solid var(--read); outline-offset: 2px; }
+.tbl { overflow-x: auto; margin-top: 10px; }
+table { border-collapse: collapse; font-variant-numeric: tabular-nums; min-width: 520px; }
+th, td { text-align: right; padding: 4px 12px; border-bottom: 1px solid var(--grid); }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 500; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Review Effort Analysis</h1>
+    <p class="lede" id="lede">Where the time around your requests to Claude goes, based on your Claude Code sessions.</p>
+  </header>
+
+  <section class="top" aria-label="Daily medians">
+    <h2>Daily medians</h2>
+    <svg id="donut" viewBox="0 0 240 240" role="img" aria-label="Ring chart: shares of reading, waiting and thinking and other"></svg>
+    <div class="parts" id="parts"></div>
+  </section>
+
+  <section class="says" aria-label="What the numbers mean">
+    <h2>What the numbers mean</h2>
+    <div id="says" class="says"></div>
+  </section>
+
+  <section class="card">
+    <h2>Per day</h2>
+    <div class="legend">
+      <span><i class="sw read"></i>Reading Effort Estimation (<b class="wpm"></b> words/min)</span>
+      <span><i class="sw rest"></i>Thinking &amp; other</span>
+      <span><i class="sw wait"></i>Waiting (Claude working)</span>
+    </div>
+    <div class="chartwrap" id="wrap">
+      <svg id="chart" role="img" aria-label="Mirrored bar chart per day: reading and thinking above the axis, Claude's working time below"></svg>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+  </section>
+
+  <section class="notes">
+    <p><b>Reading Effort Estimation</b> is the reading time Claude's answers ask for: the prose words of all answers, divided by <b class="wpm"></b> words per minute. Counted like the review-effort line: code and URLs are left out.</p>
+    <p><b>Waiting</b> runs from your prompt to Claude's last message for that request. It includes time Claude waits for your approval.</p>
+    <p><b>Thinking &amp; other</b> is the measured time from Claude's last message to your next prompt, minus the reading time, capped at <span id="cap"></span> minutes per request. Time spent on something else counts for at most that long, so heavy multitasking cannot inflate it further.</p>
+    <p id="scope"></p>
+  </section>
+
+  <details>
+    <summary>Values as a table</summary>
+    <div class="tbl"><table id="tbl"></table></div>
+  </details>
+</main>
+<script>
+const DATA = __DATA__;
+const DAYS = DATA.days;
+const fmt = m => m < 60 ? `${m} min` : `${Math.floor(m/60)} h ${String(m%60).padStart(2,"0")} min`;
+const pct = x => `${Math.round(x * 100)} %`;
+const esc = t => String(t).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+const sw = cl => `<i class="sw ${cl}"></i>`;
+const hatch = (svg, id) => {
+  const p = el("pattern", { id, width: 5, height: 5, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, el("defs", {}, svg));
+  el("rect", { width: 5, height: 5, fill: "var(--rest)" }, p);
+  el("rect", { width: 1.2, height: 5, fill: "var(--rest-ink)" }, p);
+};
+
+document.querySelectorAll(".wpm").forEach(e => e.textContent = DATA.wpm);
+document.getElementById("cap").textContent = DATA.cap;
+document.getElementById("lede").textContent = `Where the time around your requests to Claude goes, based on your Claude Code sessions of the last ${DATA.period} days.`;
+document.getElementById("scope").textContent = `Days are in order; days without sessions are left out. The daily medians use days with at least ${DATA.fullDay} requests when there are five or more of them, otherwise every day with sessions. Today and subagents are not included.`;
+
+// ring: daily medians
+const PARTS = [
+  { key: "read", name: "Reading Effort Estimation", ring: "Reading", desc: "the reading time Claude's answers ask for", fill: "var(--read)", cls: "on-read" },
+  { key: "wait", name: "Waiting", desc: "Claude working on your request", fill: "var(--wait)", cls: "on-wait" },
+  { key: "rest", name: "Thinking & other", desc: "the rest of the pause before your next prompt", fill: "url(#hatch2)", cls: "on-rest" },
+].map(p => ({ ...p, min: DATA.ring[p.key] }));
+const total = PARTS.reduce((a, p) => a + p.min, 0) || 1;
+// whole-number shares that add up to 100: round down, then give the missing points to the largest remainders
+const raw = PARTS.map(p => p.min / total * 100), share = raw.map(Math.floor);
+let left = 100 - share.reduce((a, b) => a + b, 0);
+raw.map((r, i) => [r - share[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (left > 0) { share[i]++; left--; } });
+const donut = document.getElementById("donut");
+hatch(donut, "hatch2");
+const C = 120, RO = 112, RI = 56, RL = (RO + RI) / 2, G = 1.2 * Math.PI / 180;
+const pt = (r, a) => [C + r * Math.sin(a), C - r * Math.cos(a)];
+let a0 = 0;
+PARTS.forEach((p, i) => {
+  const sweep = p.min / total * 2 * Math.PI;
+  if (sweep <= G) { a0 += sweep; return; }
+  const s = a0 + G / 2, e = a0 + sweep - G / 2, big = e - s > Math.PI ? 1 : 0;
+  const [x1, y1] = pt(RO, s), [x2, y2] = pt(RO, e), [x3, y3] = pt(RI, e), [x4, y4] = pt(RI, s);
+  el("path", { d: `M${x1},${y1} A${RO},${RO} 0 ${big} 1 ${x2},${y2} L${x3},${y3} A${RI},${RI} 0 ${big} 0 ${x4},${y4} Z`, fill: p.fill }, donut);
+  if (p.min / total >= 0.08) {
+    const [lx, ly] = pt(RL, a0 + sweep / 2);
+    const lines = (p.ring || p.name).split(/ (?=&)/), top = ly - 2 - (lines.length - 1) * 6;
+    el("text", { x: lx, y: top, "font-size": 16, "font-weight": 700, "font-family": "var(--display)", class: p.cls }, donut).textContent = `${share[i]} %`;
+    lines.forEach((t, k) => el("text", { x: lx, y: top + 14 + k * 12, "font-size": 10.5, "font-weight": 500, class: p.cls }, donut).textContent = t);
+  }
+  a0 += sweep;
+});
+document.getElementById("parts").innerHTML = PARTS.map(p =>
+  `<div class="part">${sw(p.key)}<span class="n">${esc(p.name)}</span><span class="m">${fmt(p.min)}</span><span class="d">${esc(p.desc)}</span></div>`).join("")
+  + `<div class="basis">${esc(DATA.basis)}</div>`;
+
+// statements: computed by fixed rules in review_analysis.py
+document.getElementById("says").innerHTML = DATA.says.length
+  ? DATA.says.map(([h, t]) => `<div class="say"><b>${esc(h)}</b><span>${esc(t)}</span></div>`).join("")
+  : `<div class="say"><span>Too few requests for statements yet. Run the analysis again after a few more days with Claude.</span></div>`;
+
+// day chart: days in order, no dates; the scale follows the data
+const svg = document.getElementById("chart");
+const hours = m => Math.max(1, Math.ceil(m / 60));
+const upH = hours(Math.max(...DAYS.map(d => d.read + d.rest))), downH = hours(Math.max(...DAYS.map(d => d.wait)));
+const step = upH + downH > 10 ? 2 : 1;
+const W = 940, L = 66, R = 12, T = 14, B = 16, plot = 360, pxPerMin = plot / ((upH + downH) * 60);
+const yZero = T + upH * 60 * pxPerMin, H = yZero + downH * 60 * pxPerMin + B;
+svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+const slot = (W - L - R) / DAYS.length, bw = Math.min(30, slot * 0.6), GAP = 2;
+hatch(svg, "hatch");
+const grid = (h, dir) => { const y = yZero + dir * h * 60 * pxPerMin;
+  el("line", { x1: L, x2: W - R, y1: y, y2: y, stroke: "var(--grid)", "stroke-width": 1 }, svg);
+  el("text", { x: L - 8, y: y + 4, "text-anchor": "end" }, svg).textContent = `${h} h`; };
+for (let h = step; h <= upH; h += step) grid(h, -1);
+for (let h = step; h <= downH; h += step) grid(h, 1);
+const side = (txt, y) => el("text", { x: 14, y, class: "side", "text-anchor": "middle", transform: `rotate(-90 14 ${y})` }, svg).textContent = txt;
+side("Your time", (T + yZero) / 2);
+if (downH * 60 * pxPerMin >= 80) side("Claude's time", (yZero + H - B) / 2);
+const bar = (x, y0, h, up, fill) => {
+  if (h <= 0) return;
+  const r = Math.min(4, h, bw / 2), w = bw, s = up ? -1 : 1, yE = y0 + s * h;
+  el("path", { d: `M${x},${y0} V${yE - s * r} Q${x},${yE} ${x + r},${yE} H${x + w - r} Q${x + w},${yE} ${x + w},${yE - s * r} V${y0} Z`, fill }, svg);
+};
+DAYS.forEach((d, i) => {
+  const x = L + i * slot + (slot - bw) / 2, rh = d.read * pxPerMin, ph = d.rest * pxPerMin;
+  if (ph > 0) { el("rect", { x, y: yZero - rh, width: bw, height: Math.max(0, rh - GAP / 2), fill: "var(--read)" }, svg); bar(x, yZero - rh - GAP / 2, ph - GAP / 2, true, "url(#hatch)"); }
+  else bar(x, yZero, rh, true, "var(--read)");
+  bar(x, yZero + 1, d.wait * pxPerMin, false, "var(--wait)");
+  el("rect", { x: L + i * slot, y: T, width: slot, height: H - B - T, fill: "transparent", tabindex: 0, "data-i": i }, svg);
+});
+el("line", { x1: L, x2: W - R, y1: yZero, y2: yZero, stroke: "var(--axis)", "stroke-width": 1.5 }, svg);
+
+const tip = document.getElementById("tip"), wrap = document.getElementById("wrap");
+const show = e => {
+  const i = e.target.dataset && e.target.dataset.i; if (i === undefined) return;
+  const d = DAYS[+i];
+  tip.innerHTML = `<b>Day ${+i + 1}</b>`
+    + `<div class="row"><i>${sw("read")}Reading Effort Estimation</i><span>${fmt(d.read)}</span></div>`
+    + `<div class="row"><i>${sw("rest")}Thinking &amp; other</i><span>${fmt(d.rest)}</span></div>`
+    + `<div class="row"><i>${sw("wait")}Waiting</i><span>${fmt(d.wait)}</span></div>`;
+  const box = e.target.getBoundingClientRect(), wb = wrap.getBoundingClientRect();
+  tip.style.left = Math.min(Math.max(box.left - wb.left + wrap.scrollLeft + box.width / 2, 100), wrap.scrollWidth - 100) + "px";
+  tip.style.top = (yZero - (d.read + d.rest) * pxPerMin) / H * svg.getBoundingClientRect().height + "px";
+  tip.hidden = false;
+};
+svg.addEventListener("mouseover", show); svg.addEventListener("focusin", show);
+svg.addEventListener("mouseleave", () => tip.hidden = true); svg.addEventListener("focusout", () => tip.hidden = true);
+
+document.getElementById("tbl").innerHTML = "<tr><th>Day</th><th>Reading Effort Estimation</th><th>Thinking &amp; other</th><th>Waiting</th></tr>"
+  + DAYS.map((d, i) => `<tr><td>Day ${i + 1}</td><td>${fmt(d.read)}</td><td>${fmt(d.rest)}</td><td>${fmt(d.wait)}</td></tr>`).join("");
+</script>
+</body>
+</html>
