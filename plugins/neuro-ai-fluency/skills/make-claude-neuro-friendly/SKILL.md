@@ -246,7 +246,7 @@ Wait.
 - Compose the style from the **Template** at the end of this file, in the
   language from A1. Write only lines backed by an answer, a comparison or an
   accepted recommendation, plus the lines marked *fixed*.
-- **Budget: at most 250 words** below the frontmatter. Check with `wc -w`.
+- **Budget: at most 300 words** below the frontmatter. Check with `wc -w`.
   If over, drop the least-backed line — never a *fixed* line.
 - The frontmatter must contain `keep-coding-instructions: true`. Without it,
   Claude Code drops its instructions for how to work on code.
@@ -319,7 +319,7 @@ about HDF5 yesterday"), look it up in the transcripts.
 Map the complaint to the lines it concerns, by principle. Change as few lines
 as possible. End a message with only the changed lines, before and after,
 and the question whether to apply them. Wait. Then back up and write. The
-budget applies: if a change pushes the style over 250 words, propose which
+budget applies: if a change pushes the style over 300 words, propose which
 line to drop.
 
 Then A8 — only what is missing, for example when the style is not switched
