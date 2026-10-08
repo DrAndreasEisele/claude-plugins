@@ -147,12 +147,16 @@ const PARTS = [
   { key: "rest", name: "Thinking & other", desc: "the rest of the pause before your next prompt", fill: "url(#hatch2)", cls: "on-rest" },
 ].map(p => ({ ...p, min: DATA.ring[p.key] }));
 const total = PARTS.reduce((a, p) => a + p.min, 0) || 1;
+// whole-number shares that add up to 100: round down, then give the missing points to the largest remainders
+const raw = PARTS.map(p => p.min / total * 100), share = raw.map(Math.floor);
+let left = 100 - share.reduce((a, b) => a + b, 0);
+raw.map((r, i) => [r - share[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (left > 0) { share[i]++; left--; } });
 const donut = document.getElementById("donut");
 hatch(donut, "hatch2");
 const C = 120, RO = 112, RI = 56, RL = (RO + RI) / 2, G = 1.2 * Math.PI / 180;
 const pt = (r, a) => [C + r * Math.sin(a), C - r * Math.cos(a)];
 let a0 = 0;
-PARTS.forEach(p => {
+PARTS.forEach((p, i) => {
   const sweep = p.min / total * 2 * Math.PI;
   if (sweep <= G) { a0 += sweep; return; }
   const s = a0 + G / 2, e = a0 + sweep - G / 2, big = e - s > Math.PI ? 1 : 0;
@@ -161,7 +165,7 @@ PARTS.forEach(p => {
   if (p.min / total >= 0.08) {
     const [lx, ly] = pt(RL, a0 + sweep / 2);
     const lines = (p.ring || p.name).split(/ (?=&)/), top = ly - 2 - (lines.length - 1) * 6;
-    el("text", { x: lx, y: top, "font-size": 16, "font-weight": 700, "font-family": "var(--display)", class: p.cls }, donut).textContent = pct(p.min / total);
+    el("text", { x: lx, y: top, "font-size": 16, "font-weight": 700, "font-family": "var(--display)", class: p.cls }, donut).textContent = `${share[i]} %`;
     lines.forEach((t, k) => el("text", { x: lx, y: top + 14 + k * 12, "font-size": 10.5, "font-weight": 500, class: p.cls }, donut).textContent = t);
   }
   a0 += sweep;
