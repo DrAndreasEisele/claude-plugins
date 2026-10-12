@@ -142,6 +142,7 @@ README.
 
 | Version | Changes |
 |---|---|
+| 0.3.3 | `analysis`: ring fills its column again; *Claude working* minutes appear only at the arc |
 | 0.3.2 | `analysis`: ring in minutes instead of shares; a note under *Your turn* shows how much it depends on the 10-minute cap |
 | 0.3.1 | `analysis`: *Claude working* as an arc around the ring — waiting plus the time Claude ran in parallel |
 | 0.3.0 | `analysis`: parallel sessions no longer add up — every minute counts once; *Thinking & other* is now *Your turn*, *Waiting* means only time no session waits for you, *Claude working* is shown separately |
