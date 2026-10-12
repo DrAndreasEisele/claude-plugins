@@ -13,8 +13,11 @@ parts that do not overlap, even with parallel sessions:
     Waiting   Claude works and no session waits for you
 
 Claude working, from each prompt to Claude's last message for it, is shown
-next to them. Per day, every minute counts once, however many sessions are
-open; so Claude working minus Waiting is the time parallel sessions absorbed.
+as an arc around them. Per day, every minute counts once, however many
+sessions are open; so Claude working is Waiting plus the time Claude ran in
+parallel, while you were reading or on your turn in another session. How that
+parallel time splits between reading and your turn is an estimate: it
+assumes you read an answer as soon as it arrives.
 
 Writes one HTML page with the daily medians, three statements and one bar per
 day, and prints a short summary. The statements come from fixed rules: each
@@ -144,8 +147,9 @@ def covered(spans):
 
 
 def split_day(reqs, wpm):
-    """Seconds of reading, your turn, waiting and Claude working on one day."""
-    claude, you, read = [], [], 0.0
+    """Seconds of reading, your turn, waiting and Claude working on one day,
+    plus the parallel part of Claude working beside your reading and your turn."""
+    claude, you, reading, read = [], [], [], 0.0
     for r in reqs:
         claude.append((r["start"], r["last"]))
         need = r["words"] / wpm * 60
@@ -154,11 +158,15 @@ def split_day(reqs, wpm):
         else:
             you.append((r["last"], min(r["next"], r["last"] + need + TURN_CAP)))
             need = min(need, r["next"] - r["last"])
+        reading.append((r["last"], r["last"] + need))
         read += need
     yours = covered(you)
     read = min(read, yours)
-    return {"read": read, "turn": yours - read, "wait": covered(claude + you) - yours,
-            "work": covered(claude)}
+    work = covered(claude)
+    beside_you = work + yours - covered(claude + you)
+    beside_read = work + covered(reading) - covered(claude + reading)
+    return {"read": read, "turn": yours - read, "wait": work - beside_you, "work": work,
+            "par_read": beside_read, "par_turn": beside_you - beside_read}
 
 
 def days_text(n):
@@ -261,7 +269,7 @@ def main():
     days = {}
     for r in reqs:
         days.setdefault(datetime.fromtimestamp(r["start"]).strftime("%Y-%m-%d"), []).append(r)
-    parts = ("read", "turn", "wait", "work")
+    parts = ("read", "turn", "wait", "work", "par_read", "par_turn")
     rows = [dict({k: round(v / 60) for k, v in split_day(day, wpm).items()}, full=len(day) >= FULL_DAY)
             for _, day in sorted(days.items())]
 
@@ -272,6 +280,7 @@ def main():
         basis = rows
         basis_text = f"Median of {days_text(len(basis))} with sessions"
     ring = {k: round(median([d[k] for d in basis])) for k in parts}
+    ring["work"] = ring["wait"] + ring["par_read"] + ring["par_turn"]  # the arc: waiting plus its parallel parts
     says = statements(reqs, wpm)
 
     data = {"days": rows, "ring": ring, "basis": basis_text, "says": says, "wpm": wpm,
