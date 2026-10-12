@@ -9,7 +9,8 @@ parts that do not overlap, even with parallel sessions:
               most the time until the next prompt
     Your turn the rest of the time a session waits for you: from Claude's last
               message to the next prompt, minus the reading time, at most
-              TURN_CAP per request
+              TURN_CAP per request; the page shows how much of it depends
+              on that cap
     Waiting   Claude works and no session waits for you
 
 Claude working, from each prompt to Claude's last message for it, is shown
@@ -45,6 +46,7 @@ sys.path.insert(0, HERE)
 from review_effort import HOME, prose_words, settings  # noqa: E402
 
 TURN_CAP = 600      # s: your turn counts at most this much per request
+ALT_CAPS = (5, 20)  # min: the page shows your turn with these caps too, so its dependence is visible
 FULL_DAY = 20       # requests: a day that counts for the daily medians
 MIN_FULL_DAYS = 5   # fewer full days: the medians use every day with sessions
 MIN_REQUESTS = 30   # statements 1 and 2 need this many requests
@@ -146,7 +148,7 @@ def covered(spans):
     return total
 
 
-def split_day(reqs, wpm):
+def split_day(reqs, wpm, cap=TURN_CAP):
     """Seconds of reading, your turn, waiting and Claude working on one day,
     plus the parallel part of Claude working beside your reading and your turn."""
     claude, you, reading, read = [], [], [], 0.0
@@ -156,7 +158,7 @@ def split_day(reqs, wpm):
         if r["next"] is None:
             you.append((r["last"], r["last"] + need))
         else:
-            you.append((r["last"], min(r["next"], r["last"] + need + TURN_CAP)))
+            you.append((r["last"], min(r["next"], r["last"] + need + cap)))
             need = min(need, r["next"] - r["last"])
         reading.append((r["last"], r["last"] + need))
         read += need
@@ -167,6 +169,13 @@ def split_day(reqs, wpm):
     beside_read = work + covered(reading) - covered(claude + reading)
     return {"read": read, "turn": yours - read, "wait": work - beside_you, "work": work,
             "par_read": beside_read, "par_turn": beside_you - beside_read}
+
+
+def capped_share(reqs, wpm):
+    """Share of pauses after reading that are longer than TURN_CAP and so count as TURN_CAP."""
+    pauses = [r["next"] - r["last"] - min(r["words"] / wpm * 60, r["next"] - r["last"])
+              for r in reqs if r["next"] is not None]
+    return sum(p >= TURN_CAP for p in pauses) / len(pauses) if pauses else 0.0
 
 
 def days_text(n):
@@ -270,21 +279,25 @@ def main():
     for r in reqs:
         days.setdefault(datetime.fromtimestamp(r["start"]).strftime("%Y-%m-%d"), []).append(r)
     parts = ("read", "turn", "wait", "work", "par_read", "par_turn")
+    day_reqs = [day for _, day in sorted(days.items())]
     rows = [dict({k: round(v / 60) for k, v in split_day(day, wpm).items()}, full=len(day) >= FULL_DAY)
-            for _, day in sorted(days.items())]
+            for day in day_reqs]
 
-    basis = [d for d in rows if d["full"]]
-    if len(basis) >= MIN_FULL_DAYS:
-        basis_text = f"Median of {days_text(len(basis))} with at least {FULL_DAY} requests"
+    picked = [i for i, day in enumerate(day_reqs) if len(day) >= FULL_DAY]
+    if len(picked) >= MIN_FULL_DAYS:
+        basis_text = f"Median of {days_text(len(picked))} with at least {FULL_DAY} requests"
     else:
-        basis = rows
-        basis_text = f"Median of {days_text(len(basis))} with sessions"
-    ring = {k: round(median([d[k] for d in basis])) for k in parts}
+        picked = list(range(len(day_reqs)))
+        basis_text = f"Median of {days_text(len(picked))} with sessions"
+    basis = [day_reqs[i] for i in picked]
+    ring = {k: round(median([rows[i][k] for i in picked])) for k in parts}
     ring["work"] = ring["wait"] + ring["par_read"] + ring["par_turn"]  # the arc: waiting plus its parallel parts
+    alt = [round(median([split_day(day, wpm, c * 60)["turn"] for day in basis]) / 60) for c in ALT_CAPS]
     says = statements(reqs, wpm)
 
     data = {"days": rows, "ring": ring, "basis": basis_text, "says": says, "wpm": wpm,
-            "period": args.days, "cap": TURN_CAP // 60, "fullDay": FULL_DAY}
+            "period": args.days, "cap": TURN_CAP // 60, "fullDay": FULL_DAY,
+            "capped": round(capped_share(reqs, wpm) * 100), "altCaps": ALT_CAPS, "alt": alt}
     with open(os.path.join(HERE, "review_analysis.html"), encoding="utf-8") as handle:
         page = handle.read().replace("__DATA__", json.dumps(data).replace("</", "<\\/"))
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
@@ -296,6 +309,8 @@ def main():
     print(f"Daily medians ({basis_text.lower()}): reading {fmt(ring['read'])}, "
           f"your turn {fmt(ring['turn'])}, waiting {fmt(ring['wait'])}; "
           f"Claude working {fmt(ring['work'])}")
+    print(f"Your turn depends on the {TURN_CAP // 60}-minute cap: {data['capped']} % of pauses are longer; "
+          f"with {ALT_CAPS[0]} or {ALT_CAPS[1]} minutes it would be {fmt(alt[0])} or {fmt(alt[1])}.")
     for title, _ in says:
         print(f"- {title}")
     if not says:

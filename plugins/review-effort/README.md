@@ -56,7 +56,9 @@ one page that shows where the time around your requests goes:
   counted like the line above
 - **Your turn:** the rest of the time a session waits for you — checking
   results, deciding, writing the next prompt, interruptions — at most 10
-  minutes per answer, so multitasking cannot inflate it
+  minutes per answer, so multitasking cannot inflate it. Its size depends on
+  that cap; the page says how much (share of longer pauses, and the value
+  with a 5- and a 20-minute cap). Reading against waiting holds for any cap.
 - **Waiting:** Claude works and no session waits for you
 
 Each minute counts once, however many sessions are open, so the three parts
@@ -64,7 +66,7 @@ do not overlap. An arc around the ring shows **Claude working**, from each
 prompt to Claude's last message: waiting plus the time Claude ran in
 parallel, while you were reading or on your turn in another session.
 
-The page shows the daily medians as a ring, one bar per day (no dates), and
+The page shows the daily medians as a ring in minutes, one bar per day (no dates), and
 three statements from fixed rules:
 
 | Statement | Based on |
@@ -140,6 +142,7 @@ README.
 
 | Version | Changes |
 |---|---|
+| 0.3.2 | `analysis`: ring in minutes instead of shares; a note under *Your turn* shows how much it depends on the 10-minute cap |
 | 0.3.1 | `analysis`: *Claude working* as an arc around the ring — waiting plus the time Claude ran in parallel |
 | 0.3.0 | `analysis`: parallel sessions no longer add up — every minute counts once; *Thinking & other* is now *Your turn*, *Waiting* means only time no session waits for you, *Claude working* is shown separately |
 | 0.2.0 | `analysis`: daily reading, waiting and thinking time from your own sessions, with three statements |
