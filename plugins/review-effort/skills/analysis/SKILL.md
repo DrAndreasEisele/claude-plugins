@@ -1,7 +1,7 @@
 ---
 name: analysis
-description: This skill should be used when the user wants to see how much time they spend reading Claude's answers — "analyse my review effort", "how much time do I spend reading Claude's answers", "review effort analysis", "how many sessions should I run in parallel", "wie viel Zeit lese ich pro Tag", "werte meinen Review-Aufwand aus". It reads the local session logs read-only, splits the time around each request into reading, waiting for Claude and the rest of the pause, and opens one page with daily medians, three statements and one bar per day.
-version: 0.2.0
+description: This skill should be used when the user wants to see how much time they spend reading Claude's answers — "analyse my review effort", "how much time do I spend reading Claude's answers", "review effort analysis", "how many sessions should I run in parallel", "wie viel Zeit lese ich pro Tag", "werte meinen Review-Aufwand aus". It reads the local session logs read-only, splits the time around the requests into reading, the user's turn and waiting, and opens one page with daily medians, three statements and one bar per day.
+version: 0.3.0
 ---
 
 # Review Effort Analysis
@@ -13,12 +13,15 @@ from their own Claude Code sessions of the last 28 days:
 
 - **Reading:** the reading time Claude's answers ask for, counted like the
   review-effort line
-- **Waiting:** Claude working on the request
-- **Thinking & other:** the rest of the pause before the next prompt
+- **Your turn:** the rest of the time a session waits for the user —
+  checking results, deciding, writing the next prompt
+- **Waiting:** Claude works and no session waits for the user
 
-The page adds three statements from fixed rules: whether reading or waiting
-is the larger block, how many sessions in parallel pay off, and whether long
-answers get read to the end.
+Each minute counts once, even with parallel sessions. Next to the three
+parts the page shows **Claude working**, from each prompt to Claude's last
+message. The page adds three statements from fixed rules: whether reading or
+Claude working is the larger block, how many sessions in parallel pay off,
+and whether long answers get read to the end.
 
 ## Ground rules
 
@@ -38,7 +41,7 @@ Start with exactly this text:
 
 > **Review Effort Analysis** reads your Claude Code sessions of the last 28
 > days on this computer and shows where the time around your requests goes:
-> reading, waiting for Claude, and the rest of the pause. Nothing leaves your
+> reading, your turn, and waiting for Claude. Nothing leaves your
 > machine. It takes a few seconds.
 
 ### 1. Find python3
