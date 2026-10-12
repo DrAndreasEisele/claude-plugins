@@ -1,7 +1,7 @@
 ---
 name: analysis
 description: This skill should be used when the user wants to see how much time they spend reading Claude's answers — "analyse my review effort", "how much time do I spend reading Claude's answers", "review effort analysis", "how many sessions should I run in parallel", "wie viel Zeit lese ich pro Tag", "werte meinen Review-Aufwand aus". It reads the local session logs read-only, splits the time around the requests into reading, the user's turn and waiting, and opens one page with daily medians, three statements and one bar per day.
-version: 0.3.2
+version: 0.3.3
 ---
 
 # Review Effort Analysis
