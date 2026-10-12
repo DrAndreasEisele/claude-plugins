@@ -1,7 +1,7 @@
 ---
 name: analysis
 description: This skill should be used when the user wants to see how much time they spend reading Claude's answers — "analyse my review effort", "how much time do I spend reading Claude's answers", "review effort analysis", "how many sessions should I run in parallel", "wie viel Zeit lese ich pro Tag", "werte meinen Review-Aufwand aus". It reads the local session logs read-only, splits the time around the requests into reading, the user's turn and waiting, and opens one page with daily medians, three statements and one bar per day.
-version: 0.3.1
+version: 0.3.2
 ---
 
 # Review Effort Analysis
@@ -14,7 +14,8 @@ from their own Claude Code sessions of the last 28 days:
 - **Reading:** the reading time Claude's answers ask for, counted like the
   review-effort line
 - **Your turn:** the rest of the time a session waits for the user —
-  checking results, deciding, writing the next prompt
+  checking results, deciding, writing the next prompt; its size depends on
+  a 10-minute cap per pause, and the page and summary say how much
 - **Waiting:** Claude works and no session waits for the user
 
 Each minute counts once, even with parallel sessions. An arc around the

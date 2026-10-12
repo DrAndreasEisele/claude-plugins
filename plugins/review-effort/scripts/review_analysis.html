@@ -35,9 +35,10 @@ h1 { font-family: var(--display); font-size: 28px; font-weight: 700; margin: 0; 
 .sw.work { background: var(--work); box-shadow: inset 0 0 0 1px var(--wait); }
 .sw.rest, .sw.turn { background: repeating-linear-gradient(45deg, var(--rest) 0 3px, var(--rest-ink) 3px 4px); }
 .top h2 { grid-column: 1 / -1; }
-.top { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 20px 36px; align-items: center; background: var(--surface); border: 1px solid var(--grid); border-radius: 6px; padding: 22px 20px; }
+.top { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px 36px; align-items: center; background: var(--surface); border: 1px solid var(--grid); border-radius: 6px; padding: 22px 20px; }
 @media (max-width: 680px) { .top { grid-template-columns: minmax(0, 1fr); } }
-#donut { min-width: 0; width: 100%; max-width: 300px; }
+#donut { min-width: 0; width: 100%; max-width: 420px; }
+#donut .on-work { fill: var(--fg); }
 #donut text { font-family: var(--sans); text-anchor: middle; }
 #donut .on-read { fill: var(--on-read); }
 #donut .on-wait { fill: var(--on-wait); }
@@ -50,6 +51,8 @@ h1 { font-family: var(--display); font-size: 28px; font-weight: 700; margin: 0; 
 .part .d { grid-column: 2 / -1; font-size: 13px; color: var(--fg-2); }
 .work { display: grid; grid-template-columns: 12px 1fr; gap: 12px; align-items: baseline; font-size: 13.5px; color: var(--fg-2); border-top: 1px solid var(--grid); padding-top: 12px; }
 .work .sw { align-self: center; }
+.part .flag { grid-column: 2 / -1; font-size: 13px; color: var(--fg); background: var(--grid); border-left: 3px solid var(--rest-ink); border-radius: 3px; padding: 6px 10px; margin-top: 4px; }
+.part .flag b { font-weight: 600; }
 .basis { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
 .says { display: grid; gap: 10px; }
 .top h2, .says h2, .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; margin: 0; }
@@ -89,7 +92,7 @@ th { font-weight: 500; color: var(--muted); font-size: 12px; }
 
   <section class="top" aria-label="Daily medians">
     <h2>Daily medians</h2>
-    <svg id="donut" viewBox="0 0 240 240" role="img" aria-label="Ring chart: shares of reading, your turn and waiting"></svg>
+    <svg id="donut" viewBox="-85 -36 410 316" role="img" aria-label="Ring chart: minutes of reading, your turn and waiting, with Claude's working time as an outer arc"></svg>
     <div class="parts" id="parts"></div>
   </section>
 
@@ -149,8 +152,8 @@ document.getElementById("scope").textContent = `Days are in order; days without 
 // the line under the ring: how much of Claude's working time you actually waited for
 function workText(work, wait) {
   const parallel = work - wait;
-  return `<b>Claude working: ${fmt(work)}</b> (outer arc). You waited ${fmt(wait)} of it`
-    + (parallel > 0 ? `. For ${fmt(parallel)} it ran in parallel, in another session while you were reading or on your turn.` : ".");
+  return `<b>Claude working: ${work} min</b> (outer arc). You waited ${wait} min of it`
+    + (parallel > 0 ? `. For ${parallel} min it ran in parallel, in another session while you were reading or on your turn.` : ".");
 }
 
 // ring: daily medians
@@ -159,26 +162,24 @@ const PARTS = [
   { key: "wait", name: "Waiting", desc: "Claude works and no session waits for you", fill: "var(--wait)", cls: "on-wait" },
   { key: "turn", name: "Your turn", desc: "checking results, deciding, writing the next prompt", fill: "url(#hatch2)", cls: "on-rest" },
 ].map(p => ({ ...p, min: DATA.ring[p.key] }));
+// minutes, not shares: every share depends on the cap of your turn, the minutes of reading do not
 const total = PARTS.reduce((a, p) => a + p.min, 0) || 1;
-// whole-number shares that add up to 100: round down, then give the missing points to the largest remainders
-const raw = PARTS.map(p => p.min / total * 100), share = raw.map(Math.floor);
-let left = 100 - share.reduce((a, b) => a + b, 0);
-raw.map((r, i) => [r - share[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (left > 0) { share[i]++; left--; } });
 const donut = document.getElementById("donut");
 hatch(donut, "hatch2");
 const C = 120, RO = 102, RI = 52, RL = (RO + RI) / 2, G = 1.2 * Math.PI / 180;
 const pt = (r, a) => [C + r * Math.sin(a), C - r * Math.cos(a)];
 let a0 = 0;
-PARTS.forEach((p, i) => {
+PARTS.forEach(p => {
   const sweep = p.min / total * 2 * Math.PI;
   if (sweep <= G) { a0 += sweep; return; }
   const s = a0 + G / 2, e = a0 + sweep - G / 2, big = e - s > Math.PI ? 1 : 0;
   const [x1, y1] = pt(RO, s), [x2, y2] = pt(RO, e), [x3, y3] = pt(RI, e), [x4, y4] = pt(RI, s);
   el("path", { d: `M${x1},${y1} A${RO},${RO} 0 ${big} 1 ${x2},${y2} L${x3},${y3} A${RI},${RI} 0 ${big} 0 ${x4},${y4} Z`, fill: p.fill }, donut);
-  if (p.min / total >= 0.08) {
+  p.labelled = p.min / total >= 0.08;
+  if (p.labelled) {
     const [lx, ly] = pt(RL, a0 + sweep / 2);
     const lines = (p.ring || p.name).split(/ (?=&)/), top = ly - 2 - (lines.length - 1) * 6;
-    el("text", { x: lx, y: top, "font-size": 16, "font-weight": 700, "font-family": "var(--display)", class: p.cls }, donut).textContent = `${share[i]} %`;
+    el("text", { x: lx, y: top, "font-size": 16, "font-weight": 700, "font-family": "var(--display)", class: p.cls }, donut).textContent = `${p.min} min`;
     lines.forEach((t, k) => el("text", { x: lx, y: top + 14 + k * 12, "font-size": 10.5, "font-weight": 500, class: p.cls }, donut).textContent = t);
   }
   a0 += sweep;
@@ -190,10 +191,18 @@ PARTS.forEach((p, i) => {
   if (e - s > G) {
     const [x1, y1] = pt(R2, s), [x2, y2] = pt(R2, e), [x3, y3] = pt(R1, e), [x4, y4] = pt(R1, s);
     el("path", { d: `M${x1},${y1} A${R2},${R2} 0 ${big} 1 ${x2},${y2} L${x3},${y3} A${R1},${R1} 0 ${big} 0 ${x4},${y4} Z`, fill: "var(--work)", stroke: "var(--wait)", "stroke-width": 1 }, donut);
+    // label outside the arc, at its middle, in the same form as the ring labels
+    const mid = (s + e) / 2, [lx, ly] = pt(R2 + 7, mid), sx = Math.sin(mid), down = -Math.cos(mid);
+    const anchor = sx > 0.35 ? "start" : sx < -0.35 ? "end" : "middle";
+    const top = down > 0.35 ? ly + 13 : down < -0.35 ? ly - 18 : ly - 2;
+    el("text", { x: lx, y: top, "font-size": 16, "font-weight": 700, "font-family": "var(--display)", style: `text-anchor: ${anchor}`, class: "on-work" }, donut).textContent = `${r.work} min`;
+    el("text", { x: lx, y: top + 14, "font-size": 10.5, "font-weight": 500, style: `text-anchor: ${anchor}`, class: "on-work" }, donut).textContent = "Claude working";
   }
 }
 document.getElementById("parts").innerHTML = PARTS.map(p =>
-  `<div class="part">${sw(p.key)}<span class="n">${esc(p.name)}</span><span class="m">${fmt(p.min)}</span><span class="d">${esc(p.desc)}</span></div>`).join("")
+  `<div class="part">${sw(p.key)}<span class="n">${esc(p.name)}</span><span class="m">${p.labelled ? "" : `${p.min} min`}</span><span class="d">${esc(p.desc)}</span>`
+  + (p.key === "turn" ? `<span class="flag"><b>Depends on a cap.</b> ${DATA.capped} % of your pauses were longer than ${DATA.cap} min and count as ${DATA.cap} min. With a ${DATA.altCaps[0]}-minute cap this would be ${DATA.alt[0]} min, with ${DATA.altCaps[1]} minutes ${DATA.alt[1]} min. Reading and waiting compare reliably; the size of your turn does not.</span>` : "")
+  + `</div>`).join("")
   + `<div class="work">${sw("work")}<span>${workText(DATA.ring.work, DATA.ring.wait)}</span></div>`
   + `<div class="basis">${esc(DATA.basis)}</div>`;
 
