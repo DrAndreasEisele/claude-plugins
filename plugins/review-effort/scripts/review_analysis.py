@@ -1,14 +1,20 @@
 """Review Effort Analysis: where the time around your requests to Claude goes.
 
 Started by the skill /review-effort:analysis. Reads the local Claude Code
-session logs read-only and splits the time around each request into three
-parts:
+session logs read-only and splits the time around your requests into three
+parts that do not overlap, even with parallel sessions:
 
     Reading   the reading time Claude's answers ask for: prose words divided
-              by the reading speed, counted like the review-effort line
-    Waiting   from the prompt to Claude's last message for that request
-    Thinking  from Claude's last message to the next prompt, minus the
-    & other   reading time, at most REST_CAP per request
+              by the reading speed, counted like the review-effort line, at
+              most the time until the next prompt
+    Your turn the rest of the time a session waits for you: from Claude's last
+              message to the next prompt, minus the reading time, at most
+              TURN_CAP per request
+    Waiting   Claude works and no session waits for you
+
+Claude working, from each prompt to Claude's last message for it, is shown
+next to them. Per day, every minute counts once, however many sessions are
+open; so Claude working minus Waiting is the time parallel sessions absorbed.
 
 Writes one HTML page with the daily medians, three statements and one bar per
 day, and prints a short summary. The statements come from fixed rules: each
@@ -35,7 +41,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from review_effort import HOME, prose_words, settings  # noqa: E402
 
-REST_CAP = 600      # s: thinking & other counts at most this much per request
+TURN_CAP = 600      # s: your turn counts at most this much per request
 FULL_DAY = 20       # requests: a day that counts for the daily medians
 MIN_FULL_DAYS = 5   # fewer full days: the medians use every day with sessions
 MIN_REQUESTS = 30   # statements 1 and 2 need this many requests
@@ -124,6 +130,37 @@ def load_requests(projects):
     return requests
 
 
+def covered(spans):
+    """Seconds covered by at least one (start, end) span; overlaps count once."""
+    total, end = 0.0, None
+    for start, stop in sorted(spans):
+        if end is None or start > end:
+            total += stop - start
+            end = stop
+        elif stop > end:
+            total += stop - end
+            end = stop
+    return total
+
+
+def split_day(reqs, wpm):
+    """Seconds of reading, your turn, waiting and Claude working on one day."""
+    claude, you, read = [], [], 0.0
+    for r in reqs:
+        claude.append((r["start"], r["last"]))
+        need = r["words"] / wpm * 60
+        if r["next"] is None:
+            you.append((r["last"], r["last"] + need))
+        else:
+            you.append((r["last"], min(r["next"], r["last"] + need + TURN_CAP)))
+            need = min(need, r["next"] - r["last"])
+        read += need
+    yours = covered(you)
+    read = min(read, yours)
+    return {"read": read, "turn": yours - read, "wait": covered(claude + you) - yours,
+            "work": covered(claude)}
+
+
 def days_text(n):
     return f"{n} day" if n == 1 else f"{n} days"
 
@@ -153,8 +190,8 @@ def statements(reqs, wpm):
         else:
             out.append(("Claude takes longer to answer than you take to read.",
                         f"Reading took longer than Claude's working time in only {pct(longer)} of your "
-                        "requests. Waiting is the larger block for you, so it pays to plan what you do "
-                        "while you wait."))
+                        "requests. Claude's working time is the larger block for you, so it pays to plan "
+                        "what you do while Claude works."))
 
         r_med, w_med = round(median(read), 1), round(median(wait), 1)
         if r_med > 0:
@@ -223,16 +260,10 @@ def main():
 
     days = {}
     for r in reqs:
-        day = days.setdefault(datetime.fromtimestamp(r["start"]).strftime("%Y-%m-%d"),
-                              {"read": 0.0, "wait": 0.0, "rest": 0.0, "requests": 0})
-        read = r["words"] / wpm * 60
-        day["read"] += read
-        day["wait"] += r["last"] - r["start"]
-        if r["next"] is not None:
-            day["rest"] += min(max(0.0, r["next"] - r["last"] - read), REST_CAP)
-        day["requests"] += 1
-    rows = [dict({k: round(v[k] / 60) for k in ("read", "wait", "rest")}, full=v["requests"] >= FULL_DAY)
-            for _, v in sorted(days.items())]
+        days.setdefault(datetime.fromtimestamp(r["start"]).strftime("%Y-%m-%d"), []).append(r)
+    parts = ("read", "turn", "wait", "work")
+    rows = [dict({k: round(v / 60) for k, v in split_day(day, wpm).items()}, full=len(day) >= FULL_DAY)
+            for _, day in sorted(days.items())]
 
     basis = [d for d in rows if d["full"]]
     if len(basis) >= MIN_FULL_DAYS:
@@ -240,11 +271,11 @@ def main():
     else:
         basis = rows
         basis_text = f"Median of {days_text(len(basis))} with sessions"
-    ring = {k: round(median([d[k] for d in basis])) for k in ("read", "wait", "rest")}
+    ring = {k: round(median([d[k] for d in basis])) for k in parts}
     says = statements(reqs, wpm)
 
     data = {"days": rows, "ring": ring, "basis": basis_text, "says": says, "wpm": wpm,
-            "period": args.days, "cap": REST_CAP // 60, "fullDay": FULL_DAY}
+            "period": args.days, "cap": TURN_CAP // 60, "fullDay": FULL_DAY}
     with open(os.path.join(HERE, "review_analysis.html"), encoding="utf-8") as handle:
         page = handle.read().replace("__DATA__", json.dumps(data).replace("</", "<\\/"))
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
@@ -254,7 +285,8 @@ def main():
     print(f"Report: {os.path.abspath(args.out)}")
     print(f"Based on {len(reqs)} requests on {days_text(len(rows))} with sessions, last {args.days} days.")
     print(f"Daily medians ({basis_text.lower()}): reading {fmt(ring['read'])}, "
-          f"waiting {fmt(ring['wait'])}, thinking & other {fmt(ring['rest'])}")
+          f"your turn {fmt(ring['turn'])}, waiting {fmt(ring['wait'])}; "
+          f"Claude working {fmt(ring['work'])}")
     for title, _ in says:
         print(f"- {title}")
     if not says:

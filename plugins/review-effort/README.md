@@ -54,16 +54,22 @@ one page that shows where the time around your requests goes:
 
 - **Reading Effort Estimation:** the reading time Claude's answers ask for,
   counted like the line above
-- **Waiting:** Claude working on your request
-- **Thinking & other:** the rest of the pause before your next prompt, at
-  most 10 minutes per request, so multitasking cannot inflate it
+- **Your turn:** the rest of the time a session waits for you — checking
+  results, deciding, writing the next prompt, interruptions — at most 10
+  minutes per answer, so multitasking cannot inflate it
+- **Waiting:** Claude works and no session waits for you
+
+Each minute counts once, however many sessions are open, so the three parts
+do not overlap. Next to them the page shows **Claude working**, from each
+prompt to Claude's last message: minus waiting, that is the time your
+parallel sessions absorbed.
 
 The page shows the daily medians as a ring, one bar per day (no dates), and
 three statements from fixed rules:
 
 | Statement | Based on |
 |---|---|
-| Reading or waiting is your larger block | share of requests where reading takes longer than Claude's answer |
+| Reading or Claude working is your larger block | share of requests where reading takes longer than Claude's answer |
 | How many sessions in parallel pay off | median reading time vs. median time Claude needs per answer |
 | Whether you read long answers to the end | answers over 300 words that got a reply before half their reading time |
 
@@ -134,5 +140,6 @@ README.
 
 | Version | Changes |
 |---|---|
+| 0.3.0 | `analysis`: parallel sessions no longer add up — every minute counts once; *Thinking & other* is now *Your turn*, *Waiting* means only time no session waits for you, *Claude working* is shown separately |
 | 0.2.0 | `analysis`: daily reading, waiting and thinking time from your own sessions, with three statements |
 | 0.1.0 | First release: reading-time line and `setup` with python3 check |
