@@ -116,7 +116,7 @@ th { font-weight: 500; color: var(--muted); font-size: 12px; }
     <p><b>Reading Effort Estimation</b> is the reading time Claude's answers ask for: the prose words of all answers, divided by <b class="wpm"></b> words per minute. Counted like the review-effort line: code and URLs are left out. It counts at most the time until your next prompt.</p>
     <p><b>Your turn</b> is the time a session waits for you beyond the estimated reading time: checking results such as diffs and tests, deciding, writing the next prompt — and interruptions. At most <span id="cap"></span> minutes per answer count, so time spent on something else cannot inflate it.</p>
     <p><b>Waiting</b> is the time Claude works and no session waits for you. It includes time Claude waits for your approval while you are away.</p>
-    <p><b>Claude working</b> runs from your prompt to Claude's last message, in all sessions. Minus waiting, it is the time your parallel sessions absorbed: Claude worked while you were busy in another session.</p>
+    <p><b>Claude working</b> runs from your prompt to Claude's last message, in all sessions. Minus waiting, it is the time Claude ran in parallel, in another session while you were reading or on your turn. In the ring it is the outer arc. How far the arc reaches into reading and your turn is an estimate: it assumes you read an answer as soon as it arrives.</p>
     <p><b>Parallel sessions:</b> each minute counts once, however many sessions are open, so the three parts of the ring do not overlap. Their sum is the time around your requests, not your working day: time without Claude is not in it.</p>
     <p id="scope"></p>
   </section>
@@ -148,9 +148,9 @@ document.getElementById("scope").textContent = `Days are in order; days without 
 
 // the line under the ring: how much of Claude's working time you actually waited for
 function workText(work, wait) {
-  const absorbed = work - wait;
-  return `<b>Claude working: ${fmt(work)}.</b> You waited ${fmt(wait)} of it`
-    + (absorbed > 0 ? `; for ${fmt(absorbed)} you were busy in another session.` : ".");
+  const parallel = work - wait;
+  return `<b>Claude working: ${fmt(work)}</b> (outer arc). You waited ${fmt(wait)} of it`
+    + (parallel > 0 ? `. For ${fmt(parallel)} it ran in parallel, in another session while you were reading or on your turn.` : ".");
 }
 
 // ring: daily medians
@@ -166,7 +166,7 @@ let left = 100 - share.reduce((a, b) => a + b, 0);
 raw.map((r, i) => [r - share[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (left > 0) { share[i]++; left--; } });
 const donut = document.getElementById("donut");
 hatch(donut, "hatch2");
-const C = 120, RO = 112, RI = 56, RL = (RO + RI) / 2, G = 1.2 * Math.PI / 180;
+const C = 120, RO = 102, RI = 52, RL = (RO + RI) / 2, G = 1.2 * Math.PI / 180;
 const pt = (r, a) => [C + r * Math.sin(a), C - r * Math.cos(a)];
 let a0 = 0;
 PARTS.forEach((p, i) => {
@@ -183,6 +183,15 @@ PARTS.forEach((p, i) => {
   }
   a0 += sweep;
 });
+// outer arc: Claude working = waiting plus the parallel time beside your reading (before it) and your turn (after it)
+{
+  const r = DATA.ring, k = 2 * Math.PI / total, aw = r.read * k, R1 = RO + 5, R2 = RO + 13;
+  const s = aw - r.par_read * k, e = aw + (r.wait + r.par_turn) * k, big = e - s > Math.PI ? 1 : 0;
+  if (e - s > G) {
+    const [x1, y1] = pt(R2, s), [x2, y2] = pt(R2, e), [x3, y3] = pt(R1, e), [x4, y4] = pt(R1, s);
+    el("path", { d: `M${x1},${y1} A${R2},${R2} 0 ${big} 1 ${x2},${y2} L${x3},${y3} A${R1},${R1} 0 ${big} 0 ${x4},${y4} Z`, fill: "var(--work)", stroke: "var(--wait)", "stroke-width": 1 }, donut);
+  }
+}
 document.getElementById("parts").innerHTML = PARTS.map(p =>
   `<div class="part">${sw(p.key)}<span class="n">${esc(p.name)}</span><span class="m">${fmt(p.min)}</span><span class="d">${esc(p.desc)}</span></div>`).join("")
   + `<div class="work">${sw("work")}<span>${workText(DATA.ring.work, DATA.ring.wait)}</span></div>`

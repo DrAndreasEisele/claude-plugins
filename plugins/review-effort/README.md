@@ -60,9 +60,9 @@ one page that shows where the time around your requests goes:
 - **Waiting:** Claude works and no session waits for you
 
 Each minute counts once, however many sessions are open, so the three parts
-do not overlap. Next to them the page shows **Claude working**, from each
-prompt to Claude's last message: minus waiting, that is the time your
-parallel sessions absorbed.
+do not overlap. An arc around the ring shows **Claude working**, from each
+prompt to Claude's last message: waiting plus the time Claude ran in
+parallel, while you were reading or on your turn in another session.
 
 The page shows the daily medians as a ring, one bar per day (no dates), and
 three statements from fixed rules:
@@ -140,6 +140,7 @@ README.
 
 | Version | Changes |
 |---|---|
+| 0.3.1 | `analysis`: *Claude working* as an arc around the ring — waiting plus the time Claude ran in parallel |
 | 0.3.0 | `analysis`: parallel sessions no longer add up — every minute counts once; *Thinking & other* is now *Your turn*, *Waiting* means only time no session waits for you, *Claude working* is shown separately |
 | 0.2.0 | `analysis`: daily reading, waiting and thinking time from your own sessions, with three statements |
 | 0.1.0 | First release: reading-time line and `setup` with python3 check |
