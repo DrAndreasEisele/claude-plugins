@@ -37,7 +37,7 @@ h1 { font-family: var(--display); font-size: 28px; font-weight: 700; margin: 0; 
 .top h2 { grid-column: 1 / -1; }
 .top { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px 36px; align-items: center; background: var(--surface); border: 1px solid var(--grid); border-radius: 6px; padding: 22px 20px; }
 @media (max-width: 680px) { .top { grid-template-columns: minmax(0, 1fr); } }
-#donut { min-width: 0; width: 100%; max-width: 420px; }
+#donut { min-width: 0; width: 100%; max-width: 380px; max-height: 420px; }
 #donut .on-work { fill: var(--fg); }
 #donut text { font-family: var(--sans); text-anchor: middle; }
 #donut .on-read { fill: var(--on-read); }
@@ -152,8 +152,8 @@ document.getElementById("scope").textContent = `Days are in order; days without 
 // the line under the ring: how much of Claude's working time you actually waited for
 function workText(work, wait) {
   const parallel = work - wait;
-  return `<b>Claude working: ${work} min</b> (outer arc). You waited ${wait} min of it`
-    + (parallel > 0 ? `. For ${parallel} min it ran in parallel, in another session while you were reading or on your turn.` : ".");
+  return `<b>Claude working</b> (outer arc): waiting`
+    + (parallel > 0 ? ` plus ${parallel} min in which Claude ran in parallel, in another session while you were reading or on your turn.` : `; no session ran in parallel.`);
 }
 
 // ring: daily medians
@@ -199,6 +199,9 @@ PARTS.forEach(p => {
     el("text", { x: lx, y: top + 14, "font-size": 10.5, "font-weight": 500, style: `text-anchor: ${anchor}`, class: "on-work" }, donut).textContent = "Claude working";
   }
 }
+// crop the ring's canvas to what was drawn, so the ring fills its column whichever side the arc label is on
+{ const bb = donut.getBBox(), pad = 4;
+  if (bb.width > 0) donut.setAttribute("viewBox", `${bb.x - pad} ${bb.y - pad} ${bb.width + 2 * pad} ${bb.height + 2 * pad}`); }
 document.getElementById("parts").innerHTML = PARTS.map(p =>
   `<div class="part">${sw(p.key)}<span class="n">${esc(p.name)}</span><span class="m">${p.labelled ? "" : `${p.min} min`}</span><span class="d">${esc(p.desc)}</span>`
   + (p.key === "turn" ? `<span class="flag"><b>Depends on a cap.</b> ${DATA.capped} % of your pauses were longer than ${DATA.cap} min and count as ${DATA.cap} min. With a ${DATA.altCaps[0]}-minute cap this would be ${DATA.alt[0]} min, with ${DATA.altCaps[1]} minutes ${DATA.alt[1]} min. Reading and waiting compare reliably; the size of your turn does not.</span>` : "")
