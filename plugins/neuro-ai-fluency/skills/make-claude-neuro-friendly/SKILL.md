@@ -190,15 +190,21 @@ the message with: "Does this fit? If not, tell me what to change." Wait.
 
 ### A4. Friction and ownership
 
-One call, two questions, both `multiSelect`:
+First an open question in plain text, then wait for the answer:
 
-- **What costs you most with AI answers?** Too long · Flattery, agrees too
-  quickly · Too much jargon · Too many follow-up questions
+- "What costs you most with AI answers? (for example too long, flattery or
+  agreeing too quickly, too much jargon, too many follow-up questions …)"
+
+Options would invite picking the one that almost fits; the user's own words
+show what actually bothers them.
+
+Then one call, two questions. Ownership (`multiSelect`):
+
 - **Which decisions do you want to make yourself?** Architecture and design ·
   Irreversible actions (delete, force-push, migrations) · Commits and pushes ·
   New dependencies
 
-And a third question in the same call (single):
+And in the same call (single):
 
 - **Session recap?** "(Only relevant if you use Claude Code in the
   terminal.) When you come back to a session in the terminal, Claude
@@ -206,9 +212,9 @@ And a third question in the same call (single):
   with the result and ends with the next step — the recap mostly repeats it.
   Turn it off?" — Turn off (Recommended) · Keep on
 
-### A5. Four A/B comparisons, one at a time
+### A5. Five A/B comparisons, one at a time
 
-Four rounds, each the same way. Each starts from a real request found in A3.
+Five rounds, each the same way. Each starts from a real request found in A3.
 **Claude writes both answers for the comparison**: the original answer
 supplies the content, but it was shaped by whatever settings applied back
 then, so it cannot serve as A or B itself. A and B **differ in exactly one
@@ -218,21 +224,24 @@ setting**; vary which side gets the longer or more structured version.
    - where the request comes from: "Your question from <date>, project
      <name>:" and the request itself — so it is clear this is their own —
      plus one line: "Both answers are written for this comparison.";
-   - **A** and **B** in full, each at most 8 lines, clearly labelled.
+   - **A** and **B** in full, each at most 8 lines (round 3: at most 15),
+     clearly labelled.
 2. End the message with: "A, B, in between, or doesn't matter?" Wait for
    the answer, then start the next round.
 
-Show progress as "Step 5/7 · Comparison 2/4".
+Show progress as "Step 5/7 · Comparison 2/5".
 
 | # | Example | Setting A ↔ B | Principle |
 |---|---|---|---|
 | 1 | execution | one sentence ↔ short report (what changed, how verified) | Compression |
 | 2 | explanation | dense, expert terms ↔ terms explained on first use, with an analogy | Calibration |
-| 3 | any | prose ↔ headings, bullets, markers 🔴 ⚠️ | Scannability |
-| 4 | decision | does what was asked ↔ counter-question with risk and recommendation | Anti-Sycophancy |
+| 3 | long answer (explanation or plan) | prose ↔ headings, bullets, markers 🔴 ⚠️ | Scannability |
+| 4 | short answer (3–5 lines) | plain sentences ↔ headings and bullets | Scannability |
+| 5 | decision | does what was asked ↔ counter-question with risk and recommendation | Anti-Sycophancy |
 
 "Doesn't matter" writes no line and saves budget. "In between" writes the
-middle setting.
+middle setting; in rounds 3 and 4 that is bullets with bold key points, no
+headings.
 
 ### A6. Recommendations
 
@@ -376,24 +385,35 @@ Analogies from ‹…› [A3].
 - ‹Assume expert terms | Explain new terms on first use in a few words› [A5-2]
 - Learning topics: offer to explain a detail. Known: involve me in details.
   Outside my field: result only.
+- Use my background for analogies and to think ahead; mark guesses about
+  my situation as guesses.
 
 # Compression
+- Answer first, stop when done. Short question: short answer.
 - Execution (code, fix, commit): ‹result in 1–3 sentences | short report:
   what changed, how it was verified› [A5-1]
-- Concepts and architecture: more context, concept before syntax.
+- Plans and explanations: complete, concept before syntax. Cut wording,
+  never required steps or examples.
 - No preamble, restating, closing phrases or repetition.
-- When I ask for detail, answer in full. *(fixed)*
+- Side topics: at most one question at the end.
+- When I ask for detail, answer in full, with example code and diagrams.
+  *(fixed)*
 
 # Scannability
 - Lead with result, problems, risks.
-- ‹Headings and bullets instead of prose | Short paragraphs› [A5-3]
-- Comparisons as tables, processes as A → B → C.
+- Long answers: ‹headings and bullets | bullets, bold key points, no
+  headings | short paragraphs› [A5-3]
+- Short answers: ‹headings and bullets | bullets, bold key points, no
+  headings | plain sentences› [A5-4]
+- Comparisons as tables, processes as A → B → C. Diagrams only when I ask
+  for detail, or when the content is complex and a diagram replaces words
+  and makes it easier to understand.
 - Markers only 🔴 problem, ⚠️ risk. No other emojis.
 
 # Anti-Sycophancy
 - No praise. Agree only with a reason.
 - ‹In concepts and architecture, raise risks and flawed assumptions unasked |
-  Do what I ask; name a risk only when something can go wrong› [A5-4]
+  Do what I ask; name a risk only when something can go wrong› [A5-5]
 - Risk questions: assessment, reason, proposal — no list of dangers.
 - Honest about benefit: say when a change gains little.
 - ‹Push back when I lean towards …› [A3 working style]
@@ -413,10 +433,14 @@ Lines without a slot are recommendations (step A6).
 
 | Answer | Effect |
 |---|---|
-| Too long | Execution line takes the shorter variant unless A5-1 said otherwise |
-| Flattery, agrees too quickly | keep both Anti-Sycophancy lines, take the stronger A5-4 variant |
+| Too long | Execution line takes the shorter variant unless A5-1 said otherwise; A6 lists "Answer first, stop when done" first |
+| Flattery, agrees too quickly | keep both Anti-Sycophancy lines, take the stronger A5-5 variant |
 | Too much jargon | jargon line takes "explain new terms" unless A5-2 said otherwise |
 | Too many follow-up questions | "Decide routine yourself" moves to the front of the first Ownership line |
+
+The A4 answer is free text: map each complaint to the closest row. A
+complaint no row covers becomes one numbered line in A6, under the principle
+it concerns; the user accepts or drops it there.
 
 Where A4 and A5 disagree, A5 wins: the user saw a concrete example there.
 
