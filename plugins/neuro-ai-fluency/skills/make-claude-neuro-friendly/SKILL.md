@@ -243,7 +243,10 @@ setting**; vary which side gets the longer or more structured version.
      differs.";
    - **A** and **B** in full, each at most 8 lines (round 3: at most 15),
      clearly labelled. Apart from the setting, both are the same in
-     content and format — bullets or headings only in rounds 3 and 4.
+     content and format — bullets or headings only in rounds 3 and 4;
+   - under them, the rule each side stands for, as the style would write
+     it: "A = ‹rule› · B = ‹rule›" — taken from the slot in the Template.
+     The user decides on the rule; the example only shows it.
 2. End the message with: "A, B, in between, or doesn't matter?" Wait for
    the answer, then start the next round.
 
