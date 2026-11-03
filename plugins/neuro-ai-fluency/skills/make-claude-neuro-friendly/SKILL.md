@@ -1,7 +1,7 @@
 ---
 name: make-claude-neuro-friendly
-description: This skill should be used when the user wants Claude to adapt to how they work, or to correct that adaptation — "set up Claude for me", "create my output style", "Claude is too verbose", "adjust my profile", "richte Claude auf mich ein", "erstelle meinen Output-Style", "passe mein Profil an". It builds a personal, neuro-friendly output style and a short CLAUDE.md block from clickable questions and A/B comparisons drawn from the user's own sessions, and on later runs corrects them in place.
-version: 0.2.0
+description: This skill should be used when the user wants Claude to adapt to how they work, or to correct that adaptation — "set up Claude for me", "create my output style", "Claude is too verbose", "adjust my profile", "richte Claude auf mich ein", "erstelle meinen Output-Style", "passe mein Profil an". It builds a personal, neuro-friendly output style and a short CLAUDE.md block from clickable questions and A/B comparisons drawn from the user's own sessions, and on later runs corrects them in place. In Claude Chat and Cowork it hands over the same rules as text for the instructions field in Settings.
+version: 0.3.1
 ---
 
 # Make Claude neuro-friendly
@@ -80,6 +80,13 @@ reads them to know what applies.
 - Keep a running list of every change and backup for the summary.
 
 ## 0. Detect the state
+
+**First, where you run.** Output styles exist only in Claude Code (terminal,
+IDE, the Code tab of the desktop app); your own system prompt says which
+product you are running in. Claude Chat (web, desktop, mobile) and Cowork →
+**section C**, skip the rest of step 0. Also section C if you have no tool
+to write files. If you cannot tell, ask once (single): Claude Code · Chat or
+Cowork.
 
 Resolve `<config>`. Check whether the style file exists and whether
 `<config>/CLAUDE.md` contains the markers `<!-- neuro-ai-fluency:start -->`
@@ -190,21 +197,29 @@ the message with: "Does this fit? If not, tell me what to change." Wait.
 
 ### A4. Friction and ownership
 
-First an open question in plain text, then wait for the answer:
+Two open questions in plain text, one at a time. Wait for each answer.
 
-- "What costs you most with AI answers? (for example too long, flattery or
-  agreeing too quickly, too much jargon, too many follow-up questions …)"
+1. "What costs you most with AI answers? (for example too long, flattery or
+   agreeing too quickly, too much jargon, too many follow-up questions …)"
+2. "Which decisions do you want to make yourself, and which may Claude make
+   without asking? Here is a draft from your background — keep it, change
+   it or replace it:" and a draft of two sentences, "I want to decide
+   about …" and "I delegate …", written from the picture in A3. The
+   structure, never the content, follows this example for a developer:
+   "I want to decide about software architecture and concepts,
+   irreversible actions, changes with a large blast radius and creating
+   pull requests. I delegate technical implementation, the choice of tools
+   and Git commits."
 
 Options would invite picking the one that almost fits; the user's own words
-show what actually bothers them.
+show what actually matters to them.
 
-Then one call, two questions. Ownership (`multiSelect`):
+If the user delegates something irreversible or something sent to others,
+name the risk in one sentence and ask whether to keep it; their answer
+stands. If the answer says nothing about deciding, the first Ownership line
+names irreversible actions and anything sent to others.
 
-- **Which decisions do you want to make yourself?** Architecture and design ·
-  Irreversible actions (delete, force-push, migrations) · Commits and pushes ·
-  New dependencies
-
-And in the same call (single):
+Then, in one call (single):
 
 - **Session recap?** "(Only relevant if you use Claude Code in the
   terminal.) When you come back to a session in the terminal, Claude
@@ -224,8 +239,11 @@ setting**; vary which side gets the longer or more structured version.
    - where the request comes from: "Your question from <date>, project
      <name>:" and the request itself — so it is clear this is their own —
      plus one line: "Both answers are written for this comparison.";
+   - the task in one line: "Which answer do you prefer? Only ‹the setting›
+     differs.";
    - **A** and **B** in full, each at most 8 lines (round 3: at most 15),
-     clearly labelled.
+     clearly labelled. Apart from the setting, both are the same in
+     content and format — bullets or headings only in rounds 3 and 4.
 2. End the message with: "A, B, in between, or doesn't matter?" Wait for
    the answer, then start the next round.
 
@@ -245,18 +263,22 @@ headings.
 
 ### A6. Recommendations
 
-Print the recommended lines of the template that no answer has settled yet,
-as a **numbered** list, one short line each. End the message with: "Take all?
-Or tell me which numbers to drop or change — for example 'drop 3, 5 shorter'."
-Wait.
+Print as a **numbered** list, one short line each: the template lines
+marked *(choice)*, and every line derived from a free answer — complaints
+from A4 that no row covers, and the push-back line from A3. Usually at most
+five. End the message with: "Take all? Or tell me which numbers to drop or
+change — for example 'drop 3, 5 shorter'." Wait.
 
 ### A7. Write
 
 - Compose the style from the **Template** at the end of this file, in the
   language from A1. Write only lines backed by an answer, a comparison or an
-  accepted recommendation, plus the lines marked *fixed*.
+  accepted A6 line, plus the *fixed* lines.
+- **Copy template lines word for word**; fill only the slots. The A6 list
+  shows them the same way.
 - **Budget: at most 300 words** below the frontmatter. Check with `wc -w`.
-  If over, drop the least-backed line — never a *fixed* line.
+  If over, first shorten the lists in Calibration, then drop the
+  least-backed line — never a *fixed* line, never reword one.
 - The frontmatter must contain `keep-coding-instructions: true`. Without it,
   Claude Code drops its instructions for how to work on code.
 - **Personal mode:** write the CLAUDE.md block from the template's second
@@ -345,6 +367,54 @@ Run A1–A6. Then ask (single): Replace · Combine.
 
 Then A8 and A9.
 
+## C. Claude Chat and Cowork
+
+There are no output styles, settings files or local transcripts here. One
+field goes with every conversation: **Settings → Your Claude →
+Instructions** (older layout: Settings → Account → Instructions for Claude;
+older Cowork versions: Settings → Cowork → Global instructions). The skill
+writes no file — not even into a Cowork folder — and hands over one text to
+paste.
+
+Run section A with these differences:
+
+- **A1:** Main language as in A1, and First setup · Correct my
+  instructions. For the second answer, ask the user to paste their current
+  text, then run B1 on it. If you have a tool to search or list past chats
+  (the user turned on chat search in Settings; look for it with tool
+  search too, if you have one; decide by your tools, not by the product
+  name — Chat and Cowork can share one window), also ask: "May I look at a few of your
+  recent chats to build examples?" — Yes · No, use made-up examples. If
+  there is no such tool, say in one sentence that past chats are not
+  reachable in this session, and go on.
+- **No `AskUserQuestion` tool:** ask the same options as a numbered list in
+  plain text.
+- **A3:** if the user allowed it, find the three pairs with that tool. It
+  returns excerpts, not full transcripts: the request and the gist of the
+  answer are enough. Same limits as in A3: stop at three pairs, at most two
+  minutes, skip personal data. Otherwise build the examples from A2; if the
+  user pastes a typical request of their own, use that.
+- **A4:** no session-recap question.
+- **A5:** a request from a past chat is introduced as in A5 ("Your question
+  from <date>:"), a made-up one as "An example from your work:". Round 1 is
+  a task Claude does for the user, not necessarily code.
+- **A7:** one text, no frontmatter, no CLAUDE.md block. Calibration as in
+  project mode (up to five items per list); the A4 decisions go into the
+  first Ownership line. Execution line: name the user's kind of task instead
+  of "code, fix, commit". Same 300-word budget.
+- **A8:** skip.
+- **A9:** in this order:
+  1. the text in **one code block**, nothing else inside, so the copy button
+     takes all of it;
+  2. where to paste it (path above). If the field already holds text, the
+     user adds to it or replaces it; advise copying the old text first — it
+     is the backup;
+  3. the 3–5 settings the user can name;
+  4. **last:** active from the next new conversation; in the new app Chat
+     and Cowork share the field. If the field rejects the length, drop the
+     least-backed line, never a *fixed* one. To correct it later, run the
+     skill again and paste the current text.
+
 ## Other tools
 
 If the user also works with Antigravity, Pi, opencode or similar: output
@@ -365,7 +435,8 @@ apart.
 # Part 2 — Template
 
 Write both files in the main language from A1. `‹…›` marks a slot, `[A5-2]` the
-answer that fills it. Lines marked *fixed* always stay. Leave out any line
+answer that fills it. Lines without a slot are *fixed* and always stay,
+except lines marked *(choice)*: the user confirms those in A6. Leave out any line
 whose answer was "Doesn't matter", and the whole slot when nothing was chosen.
 
 ## 1 · Output style
@@ -395,12 +466,11 @@ Analogies from ‹…› [A3].
 - Plans and explanations: complete, concept before syntax. Cut wording,
   never required steps or examples.
 - No preamble, restating, closing phrases or repetition.
-- Side topics: at most one question at the end.
+- Side topics: at most one question at the end. *(choice)*
 - When I ask for detail, answer in full, with example code and diagrams.
-  *(fixed)*
 
 # Scannability
-- Lead with result, problems, risks.
+- Lead with result, problems, risks. *(choice)*
 - Long answers: ‹headings and bullets | bullets, bold key points, no
   headings | short paragraphs› [A5-3]
 - Short answers: ‹headings and bullets | bullets, bold key points, no
@@ -408,7 +478,7 @@ Analogies from ‹…› [A3].
 - Comparisons as tables, processes as A → B → C. Diagrams only when I ask
   for detail, or when the content is complex and a diagram replaces words
   and makes it easier to understand.
-- Markers only 🔴 problem, ⚠️ risk. No other emojis.
+- Markers only 🔴 problem, ⚠️ risk. No other emojis. *(choice)*
 
 # Anti-Sycophancy
 - No praise. Agree only with a reason.
@@ -417,26 +487,27 @@ Analogies from ‹…› [A3].
 - Risk questions: assessment, reason, proposal — no list of dangers.
 - Honest about benefit: say when a change gains little.
 - ‹Push back when I lean towards …› [A3 working style]
-- Name errors clearly, your own too, with cause and reach. *(fixed)*
+- Name errors clearly, your own too, with cause and reach.
 
 # Ownership
 - I decide: ‹…› [A4]. Present as problem → options with benefit, risk →
-  recommendation. Decide routine yourself.
+  recommendation.
+- Decide yourself: ‹routine | what I delegate› [A4].
 - Highlight what I must check; nothing more.
 - For adjustable results, name the one setting to change.
-- End with the next step or the open decision.
+- End with the next step or the open decision, only if there is one.
 ```
 
-Lines without a slot are recommendations (step A6).
+The *(choice)* marker itself is never written into the style.
 
 **Friction from A4 sharpens lines, it adds none:**
 
 | Answer | Effect |
 |---|---|
-| Too long | Execution line takes the shorter variant unless A5-1 said otherwise; A6 lists "Answer first, stop when done" first |
+| Too long | Execution line takes the shorter variant unless A5-1 said otherwise |
 | Flattery, agrees too quickly | keep both Anti-Sycophancy lines, take the stronger A5-5 variant |
 | Too much jargon | jargon line takes "explain new terms" unless A5-2 said otherwise |
-| Too many follow-up questions | "Decide routine yourself" moves to the front of the first Ownership line |
+| Too many follow-up questions | the "Decide yourself" line moves to the top of Ownership |
 
 The A4 answer is free text: map each complaint to the closest row. A
 complaint no row covers becomes one numbered line in A6, under the principle

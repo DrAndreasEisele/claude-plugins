@@ -29,6 +29,12 @@ claude plugin install neuro-ai-fluency@dr-andreas-eisele --scope local
 
 Then start a new Claude Code session and type the skill's name.
 
+**Claude Chat or Cowork:** add this repository under Customize → Plugins →
+Add → Add marketplace, or, as the owner of a Team or Enterprise
+organization, under Organization settings → Plugins & skills. There the
+skill writes no file; it hands you the text for Settings → Your Claude →
+Instructions.
+
 ## make-claude-neuro-friendly
 
 The style is ordered by five principles — **Calibration, Compression,
@@ -53,7 +59,9 @@ style file by hand, or switch styles with `/output-style`.
 ## Privacy
 
 Both skills read your local Claude Code session logs, read-only and only when
-you run them. They collect nothing, log nothing and send nothing beyond what
+you run them. In Claude Chat and Cowork, `make-claude-neuro-friendly` reads
+no logs; if you turned on chat search and allow it, it looks at excerpts of
+a few recent chats through Claude's own chat search. They collect nothing, log nothing and send nothing beyond what
 your Claude Code session already sends.
 
 ## Files on your machine
@@ -77,6 +85,7 @@ README.
 | Version | Changes |
 |---|---|
 | 0.3.0 | `make-claude-neuro-friendly`: shorter answers without losing substance — answer first and stop, side topics as one question at the end, background for analogies and thinking ahead, guesses marked as guesses, plans and requested explanations complete, diagrams on request for detail or where they replace words. Measured with the author's own style built from this template, against Claude without a style (20 cases × 3, blind judge): median answer 22 % shorter, overall score slightly higher, correctness 0.12 lower on a 1–5 scale (one invented test value). Formatting is now compared separately for long and short answers (five A/B comparisons instead of four). "What costs you most" is now an open question instead of options |
+| 0.3.1 | `make-claude-neuro-friendly` in Claude Chat and Cowork: hands over the same rules as text for the instructions field, with examples from past chats if chat search is on. The ownership question is open too, with a draft from your background that names what you decide and what you delegate. The recommendations step shows only real choices, at most about five lines; the measured core lines always apply |
 | 0.2.3 | `make-claude-neuro-friendly`: the style may hold up to 300 words instead of 250, so fewer backed lines are dropped |
 | 0.2.2 | `make-claude-neuro-friendly`: if writing the project settings is refused, it points to `/output-style Neuro-Friendly` instead of a shell command |
 | 0.2.1 | `make-claude-neuro-friendly`: asks for the permission to read your sessions up front when reads outside the project are blocked; a self-written `neuro-friendly.md` as starting point now also asks where to save and switches the style on |
