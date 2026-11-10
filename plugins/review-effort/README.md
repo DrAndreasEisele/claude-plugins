@@ -1,6 +1,6 @@
 # review-effort
 
-Puts the reading time on top of every longer Claude answer:
+Shows the reading time with every longer Claude answer:
 
 > **🧠 Review Effort: ~3 min**
 

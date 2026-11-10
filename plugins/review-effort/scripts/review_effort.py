@@ -18,7 +18,7 @@
             from a fixed reading speed, not from measuring you. Languages written without spaces between
             words are undercounted. On any error it silently shows the original answer.
 
-Reading-time estimate on top of every longer Claude answer.
+Reading-time estimate with every longer Claude answer.
 
 MessageDisplay hook, started by review-effort.sh. Counts the prose words of a
 message and shows a bold quote line with it, e.g.
