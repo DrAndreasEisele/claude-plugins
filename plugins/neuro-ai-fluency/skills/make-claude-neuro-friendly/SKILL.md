@@ -1,6 +1,6 @@
 ---
 name: make-claude-neuro-friendly
-description: This skill should be used when the user wants Claude to adapt to how they work, or to correct that adaptation — "set up Claude for me", "create my output style", "Claude is too verbose", "adjust my profile", "richte Claude auf mich ein", "erstelle meinen Output-Style", "passe mein Profil an". It builds a personal, neuro-friendly output style and a short CLAUDE.md block from clickable questions and A/B comparisons drawn from the user's own sessions, and on later runs corrects them in place. In Claude Chat and Cowork it hands over the same rules as text for the instructions field in Settings.
+description: This skill should be used when the user wants Claude to adapt to how they work, or to correct that adaptation — "set up Claude for me", "create my output style", "Claude is too verbose", "adjust my profile", "richte Claude auf mich ein", "erstelle meinen Output-Style", "passe mein Profil an". It builds a personal, neuro-friendly output style and a short CLAUDE.md block from a short interview and A/B comparisons drawn from the user's own sessions, and on later runs corrects them in place. In Claude Chat and Cowork it hands over the same rules as text for the instructions field in Settings.
 version: 0.3.1
 ---
 
