@@ -1,4 +1,24 @@
-"""Reading-time estimate on top of every longer Claude answer.
+"""Profile
+  Purpose:  Shows the estimated reading time of every longer Claude answer, so you see before reading
+            whether it is a quick look or needs a proper review slot.
+  Trigger:  Claude Code, for every answer it displays (MessageDisplay hook in hooks/hooks.json), via
+            review-effort.sh, which does nothing until /review-effort:setup has written the config file.
+  Reads:    The answer text Claude Code hands over, in one or several chunks; reading speed and minimum
+            length from ~/.claude/review-effort/config (default 137 words/min and 150 words).
+  Does:
+    - counts the prose words; code blocks, web addresses and link targets do not count, table cells do
+    - divides by the reading speed and rounds to whole minutes, at least 1
+    - for an answer in several chunks, keeps the running count in ~/.claude/review-effort/msgs and
+      removes it with the last chunk, together with leftovers older than a day
+  Result:   A line "🧠 Review Effort: ~3 min": above the answer when it arrives in one piece (usual in the
+            VS Code panel), otherwise below it. Display only: the transcript and what Claude sees stay
+            unchanged. Logs nothing.
+  Limits:   Answers below the minimum get no line, and so do very long ones: above 10,000 characters
+            including the line, Claude Code would ignore the change, so nothing is added. The minutes come
+            from a fixed reading speed, not from measuring you. Languages written without spaces between
+            words are undercounted. On any error it silently shows the original answer.
+
+Reading-time estimate on top of every longer Claude answer.
 
 MessageDisplay hook, started by review-effort.sh. Counts the prose words of a
 message and shows a bold quote line with it, e.g.

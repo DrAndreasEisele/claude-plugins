@@ -1,4 +1,29 @@
-"""Review Effort Analysis: where the time around your requests to Claude goes.
+"""Profile
+  Purpose:  Shows where the time around your requests to Claude goes: reading the answers, your own turn
+            and waiting for Claude, with daily medians, three statements and one bar per day.
+  Trigger:  The skill /review-effort:analysis when the user asks for it; can also be run by hand.
+  Reads:    All Claude Code session logs on this computer (~/.claude/projects, or CLAUDE_CONFIG_DIR) of
+            the last 28 days (--days), today not included, subagent runs left out; the reading speed from
+            ~/.claude/review-effort/config (default 137 words/min); the page template review_analysis.html.
+  Does:
+    - one entry per request: from the prompt to Claude's last message, plus the words of the answer
+    - splits each day into reading, your turn and waiting; time with several sessions open counts once
+    - counts at most 10 minutes of your turn per request, and shows it with 5 and 20 minutes too
+    - daily medians over days with at least 20 requests if there are 5 such days, else over all days
+    - three statements from fixed thresholds; they need 30 answered requests and 15 answers over
+      300 words
+  Result:   The page ~/.claude/review-effort/analysis.html (--out), replaced on every run, and a short
+            summary in the terminal; exit code 2 if no requests were found. No dates, prompts or answer
+            texts go into the page. Nothing is sent anywhere; the logs stay unchanged.
+  Limits:
+    - Reading time is estimated from the word count, not measured.
+    - The split of parallel time assumes you read each answer as soon as it arrives.
+    - Time spent approving Claude's tool use counts as Claude working, not as your turn.
+    - When a background agent reports back or a request is interrupted, the request ends there; what
+      Claude does afterwards is not counted.
+    - Only the logs on this computer count.
+
+Review Effort Analysis: where the time around your requests to Claude goes.
 
 Started by the skill /review-effort:analysis. Reads the local Claude Code
 session logs read-only and splits the time around your requests into three
@@ -259,7 +284,8 @@ def fmt(minutes):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(
+        description="Review Effort Analysis: where the time around your requests to Claude goes.")
     parser.add_argument("--days", type=int, default=28, help="days to look back (default 28)")
     parser.add_argument("--out", default=os.path.join(HOME, "analysis.html"), help="where to write the page")
     args = parser.parse_args()
