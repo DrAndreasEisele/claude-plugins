@@ -159,7 +159,7 @@ Setup changed nothing else: no other settings, no shell files.
 **Next**
 
 - Works right away, in this session too: the next answer of 150 words or more
-  starts with the line.
+  shows the line, on top in the VS Code panel, at the end in the terminal.
 - If the minutes regularly feel too short or too long, change the reading
   speed in the config file, the line `wpm=` (lower = more minutes). The next
   answer uses the new value.

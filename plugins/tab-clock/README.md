@@ -114,6 +114,8 @@ reopen them later — keep showing Claude Code's own title without a clock.
 
 ## Files on your machine
 
+`/tab-clock:setup` always changes these user-level files, also when the plugin was installed with `--scope local`.
+
 | Path | What | Written by |
 |---|---|---|
 | `<plugin folder>/hooks/hooks.json` | **the hooks:** run the script when you send a prompt, when Claude waits for you, finishes or stops on an error, or the session ends | plugin install |
