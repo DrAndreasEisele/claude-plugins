@@ -1,7 +1,8 @@
 ---
 name: setup
 description: This skill should be used when the user wants to switch on the tab-clock plugin — "set up tab-clock", "show Claude's status in my terminal tab", "show a timer in the tab", "richte die Tab-Uhr ein". It finds the user's setup, makes the one-time settings the plugin cannot make by itself after a single confirmation, and ends with a list of every change.
-version: 0.4.2
+metadata:
+  version: 0.5.0
 ---
 
 # Set up tab-clock
@@ -39,15 +40,24 @@ introductions, no explanations beyond the one line per change given below.
 
 ### 0. Check that it can work
 
-Say nothing about these checks unless one fails.
+Say nothing about these checks unless one fails. The first three come before
+anything else, and a failure **stops setup at once**: change nothing, ask
+nothing, say only the message given.
 
 - **Operating system:** macOS or Linux. On Windows, stop: the plugin does not
   support it.
-- **A terminal is required.** A tab title exists only where Claude Code runs in
-  a terminal (system terminal, or the terminal inside VS Code and its forks).
-  The chat panel of the VS Code extension and the desktop app have no tab: if
-  `$TERM_PROGRAM` is unset and there is no terminal, say so in one sentence
-  and ask whether to go on.
+- **Claude Code in a terminal only.** Your own system prompt says which
+  product you run in. In Claude Chat (web, desktop, mobile) or Cowork, or if
+  you have no tool to run commands, stop. Otherwise run
+  `bash "${CLAUDE_SKILL_DIR}/../../scripts/tab-clock.sh" check`. It prints
+  `terminal` when this session runs in a terminal (system terminal, or the
+  terminal inside VS Code and its forks). On `no-terminal` (chat panel of the
+  VS Code extension, desktop app) or any other output, stop. The message:
+
+  > tab-clock shows its clock in a terminal tab, so it works only when Claude
+  > Code runs in a terminal. Open a terminal (in VS Code: Terminal → New
+  > Terminal), start `claude` there and run this setup again.
+
 - **tmux / screen** hide tab titles unless configured. If `$TMUX` is set,
   mention `set -g set-titles on` in `~/.tmux.conf` in one line; do not change
   it yourself.
@@ -106,9 +116,8 @@ Pick the file from `$SHELL`: `~/.zshrc` for zsh, `~/.bashrc` for bash. Run
 `type claude` in that shell: if `claude` is already an alias or function,
 leave this change out. For any other shell, leave it out too. In both cases
 say in the summary that new tabs keep the shell title until the first prompt.
-This change is part of a) and is **not listed in the confirmation** — it only
-supports a) and would distract there; the summary lists it like every other
-change. The block, appended unchanged — its markers let
+It changes a shell startup file, so the confirmation names it like every
+other change. The block, appended unchanged — its markers let
 `/tab-clock:remove` take it out again exactly:
 
 ```sh
@@ -132,28 +141,27 @@ The function steps aside by itself once a) is undone.
 **d) Tab format** — `~/.claude/settings.json`, `env` key
 `TAB_CLOCK_FORMAT`: the blocks to show, in order, separated by spaces, from
 `clock`, `folder`, `branch`, `topic`. Missing counts as
-`clock folder branch topic`. Not a change of its own: step 3 sets it.
+`clock folder branch`. Not a change of its own: step 3 sets it.
 
 ### 2. Confirm the changes
 
 Skip this step when a), b) and c) are all in place.
 
-Use this text as the question itself, with only the changes a) and b) still
-needed; c) goes with a) without a line of its own. Write it as plain lines,
-exactly in this shape — **no table and no code block**: the question box
-shows them unformatted, with every `|` visible.
+Use this text as the question itself, with one line for each of a), b) and
+c) still needed. Write it as plain lines, exactly in this shape — **no table
+and no code block**: the question box shows them unformatted, with every `|`
+visible.
 
 ```
 Please confirm — tab-clock makes these changes so the tab shows Claude's status with a clock:
 • ~/.claude/settings.json — Claude Code's own tab title off; the plugin writes it instead
 • <VS Code file> — VS Code shows the title the program sets, the folder only once
+• ~/.zshrc — a small function names new tabs "✳ Claude Code" before the first prompt
 Backups first; /tab-clock:remove undoes everything. Claude Code may ask once more per file.
 ```
 
-Options: `Yes, make these changes`, `Cancel`. Only if c) is the one change
-still needed, give it its own line instead:
-`• ~/.zshrc — new tabs show "✳ Claude Code" before the first prompt` (or
-`~/.bashrc`).
+Use `~/.bashrc` in the last line when that is the file. Options:
+`Yes, make these changes`, `Cancel`.
 
 On `Cancel`, change nothing and stop; step 3 is not asked.
 
@@ -164,7 +172,7 @@ One question, single choice, with this text:
 ```
 How should the tab look?
 
-Topic: Claude uses the Haiku model to derive a short, meaningful title for the session.
+Topic: Claude uses the Haiku model to derive a short, meaningful title for the session. For this, your first prompt is sent once more, as a separate small request.
 Branch: shown only when it is not main or master.
 Your own order: type the blocks, e.g. topic clock folder
 ```
@@ -186,9 +194,9 @@ example off. Keep the empty line right after the question line.
 
 | Label | Description | `TAB_CLOCK_FORMAT` |
 |---|---|---|
+| `◐ 1:31 · Website ⎇ dev` | `clock · folder · branch — no topic, Haiku is never asked` | `clock folder branch` |
 | `◐ 1:31 · Website ⎇ dev · Topic` | `clock · folder · branch · topic` | `clock folder branch topic` |
 | `◐ 1:31 · Topic · Website ⎇ dev` | `clock · topic · folder · branch` | `clock topic folder branch` |
-| `◐ 1:31 · Website ⎇ dev` | `clock · folder · branch — no topic, Haiku is never asked` | `clock folder branch` |
 
 The question box also offers a free answer: there the user names the blocks
 in their own order, e.g. `topic clock folder`. Accept `clock`, `folder`,
