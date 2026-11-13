@@ -1,7 +1,8 @@
 ---
 name: latency-report
 description: This skill should be used when the user wants to know how long Claude takes to answer their requests and what to do while they wait — "analyse my AI latencies", "how long do my requests take", "build my latency tiers", "test our group's signal", "werte meine Wartezeiten aus", "wie lange braucht Claude bei mir". It reads the local session logs read-only, measures the wait per request, tests the user's chosen signal against the type of request and drafts three personal tiers — stay, do something small, switch — with a guiding sentence each.
-version: 0.1.0
+metadata:
+  version: 0.1.0
 ---
 
 # Latency report

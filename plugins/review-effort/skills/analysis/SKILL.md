@@ -1,7 +1,8 @@
 ---
 name: analysis
 description: This skill should be used when the user wants to see how much time they spend reading Claude's answers — "analyse my review effort", "how much time do I spend reading Claude's answers", "review effort analysis", "how many sessions should I run in parallel", "wie viel Zeit lese ich pro Tag", "werte meinen Review-Aufwand aus". It reads the local session logs read-only, splits the time around the requests into reading, the user's turn and waiting, and opens one page with daily medians, three statements and one bar per day.
-version: 0.3.3
+metadata:
+  version: 0.3.4
 ---
 
 # Review Effort Analysis
@@ -35,6 +36,16 @@ and whether long answers get read to the end.
 - The analysis needs no `/review-effort:setup`; it only needs `python3`.
 
 ## Steps
+
+### Before anything else: where you run
+
+Your own system prompt says which product you run in. In Claude Chat (web,
+desktop, mobile) or Cowork, or if you have no tool to run commands, say only
+this and stop:
+
+> The Review Effort Analysis reads your Claude Code sessions on your computer,
+> so it works only in Claude Code (terminal, VS Code, or the Code tab of the
+> desktop app). Run it there.
 
 ### 0. Say what it does
 

@@ -1,7 +1,8 @@
 ---
 name: setup
 description: This skill should be used when the user wants to switch on the review-effort plugin — "set up review-effort", "show the reading time on Claude's answers", "how long will this answer take to review", "richte Review Effort ein", "zeig mir die Lesezeit über den Antworten". It checks that python3 is available, stops with a clear message if not, and otherwise switches the reading-time line on with one small config file.
-version: 0.1.0
+metadata:
+  version: 0.3.4
 ---
 
 # Set up review-effort
@@ -34,6 +35,15 @@ no `settings.json`, no shell files.
   what happened to it, for the summary at the end.
 
 ## Procedure
+
+### Before anything else: where you run
+
+Your own system prompt says which product you run in. In Claude Chat (web,
+desktop, mobile) or Cowork, or if you have no tool to run commands, say only
+this and stop:
+
+> Review Effort works only in Claude Code (terminal, VS Code, or the Code tab
+> of the desktop app). Run this setup there.
 
 ### 0. Say what the plugin does
 

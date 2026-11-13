@@ -52,7 +52,7 @@ end:
 |---|---|
 | Switch off Claude Code's own tab title | Claude Code writes the title itself; with both writing, the tab would flicker. The plugin shows the same information plus the clock. |
 | VS Code only: show the title a program sets, the folder only once | By default VS Code labels a tab with the program name (`zsh`, `node`, a version number) and ignores titles. Other terminals show titles already. |
-| A small shell function | Names a new tab `✳ Claude Code` right away; otherwise it shows the shell's own title until your first prompt. |
+| A small shell function in `~/.zshrc` or `~/.bashrc` | Names a new tab `✳ Claude Code` right away; otherwise it shows the shell's own title until your first prompt. |
 
 Afterwards, open a **new** terminal tab and start a **new** session. To undo
 everything: `/tab-clock:remove`.
@@ -66,8 +66,10 @@ reopen them later — keep showing Claude Code's own title without a clock.
 - macOS and Linux, in any terminal that shows window titles: Terminal,
   iTerm2, GNOME Terminal, Konsole, and the terminal inside VS Code and its
   forks. In tmux only with `set -g set-titles on`.
-- **Not** in the chat panel of the VS Code extension or in the desktop app:
-  there is no tab there. Windows is not supported.
+- **Not** in the chat panel of the VS Code extension, in the desktop app, in
+  Claude Chat or in Cowork: there is no tab there. Setup checks this first
+  and stops with a message when it is not run from a terminal. Windows is not
+  supported.
 - Needs only `bash` and standard tools that both systems ship with.
 - **Your own hooks stay untouched.** The plugin adds five hooks next to yours
   and changes none of them; they print nothing and never block. Only another
@@ -80,8 +82,8 @@ reopen them later — keep showing Claude Code's own title without a clock.
   can differ from Claude's own "Worked for …" by up to one second.
 - **What the tab shows, and in which order, is yours to choose** in setup:
   from the blocks clock, folder, branch and topic, e.g.
-  `◐ 1:31 · Website ⎇ feature · Login form errors` (the default) or
-  `◐ 1:31 · Login form errors · Website ⎇ feature`. Run `/tab-clock:setup`
+  `◐ 1:31 · Website ⎇ feature` (the default) or
+  `◐ 1:31 · Website ⎇ feature · Login form errors`. Run `/tab-clock:setup`
   again to change it; it is stored as `TAB_CLOCK_FORMAT` in the `env` block of
   `~/.claude/settings.json`.
   - **folder:** the project folder; in a git worktree `repo/worktree`, e.g.
@@ -89,15 +91,18 @@ reopen them later — keep showing Claude Code's own title without a clock.
   - **branch:** `⎇ branch`, only when it is not `main` or `master`.
   - Folder and branch follow along while Claude works: a branch switch or a
     move into a worktree shows within about 5 seconds.
-  - **topic:** a name you set with `/rename` wins, then Claude Code's
-    automatic title. Claude Code rarely writes that one while its own tab
-    title is off, so the plugin asks **Haiku** once per session for a short
-    title from your first prompt (slash commands and very short prompts are
-    skipped). This is a separate `claude -p` call with your own login: no
-    tools, no hooks, no MCP servers, not saved as a session; about 4,000
-    tokens (≈ 0.1 cent), 2–5 s. After a short first answer the tab adds the
-    title as soon as it arrives. Without `topic` in the format, Haiku is never
-    asked.
+  - **topic** (only if you choose it): a name you set with `/rename` wins,
+    then Claude Code's automatic title. Claude Code rarely writes that one
+    while its own tab title is off, so the plugin asks **Haiku** once per
+    session for a short title from your first prompt (slash commands and very
+    short prompts are skipped). This sends the first 1,000 characters of that
+    prompt a second time, as a separate `claude -p` call with your own login:
+    no tools, no MCP servers, not saved as a session; your own, project and
+    plugin hooks do not run on it, so a title never sets off another hook;
+    hooks from managed settings still apply. About 4,000 tokens (≈ 0.1 cent),
+    2–5 s. After a short first answer the
+    tab adds the title as soon as it arrives. Without `topic` in the format,
+    Haiku is never asked.
 - It recognises Esc and the session name from the entries Claude Code writes
   to its transcript. If a Claude Code update changes that format, at worst the
   topic is missing, or after Esc the clock keeps running until your next
@@ -124,7 +129,7 @@ reopen them later — keep showing Claude Code's own title without a clock.
 | VS Code user `settings.json` → `terminal.integrated.tabs.title`, `terminal.integrated.tabs.description` (Remote-SSH: the remote's `~/.vscode-server/data/Machine/settings.json`) | tabs show the title a program sets; the description drops the folder, which the title already shows — VS Code users only | `/tab-clock:setup` |
 | `~/.zshrc` or `~/.bashrc`, block between `# >>> tab-clock >>>` and `# <<< tab-clock <<<` | names a new tab before the first prompt | `/tab-clock:setup` |
 | `<file>.bak-tab-clock-<time>` next to each changed file | backup before every change | setup and remove |
-| `$TMPDIR/tab-clock-<user id>/<session>.run`, `.state`, `.done`, `.topic` (Linux usually `/tmp/…`) | current turn and state of a running session, and the Haiku title; deleted when the turn or session ends | the hooks and the clock, while they run |
+| `tab-clock-<user id>/<session>.run`, `.state`, `.done`, `.topic`, `.prompt` in `$XDG_RUNTIME_DIR` (Linux), else `$TMPDIR` (macOS) or `/tmp` | current turn and state of a running session; with topic, the first prompt until Haiku has answered, and the title; deleted when the turn or session ends. The folder is readable only by you; if it belongs to someone else, the plugin does nothing | the hooks and the clock, while they run |
 
 `/tab-clock:remove` takes out the settings and the shell block; it asks about
 the VS Code setting, which may have been there before. `<plugin folder>` is

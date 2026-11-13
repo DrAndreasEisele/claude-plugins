@@ -129,11 +129,15 @@ def load_requests(projects):
                         record = json.loads(line)
                     except ValueError:
                         continue
-                    if record.get("isSidechain") or not record.get("timestamp"):
+                    if not isinstance(record, dict) or record.get("isSidechain") or not record.get("timestamp"):
                         continue
                     label = kind(record)
                     if label:
-                        records.append((stamp(record["timestamp"]), label, record))
+                        try:
+                            at = stamp(record["timestamp"])
+                        except (TypeError, ValueError):
+                            continue  # one odd entry must not stop the whole analysis
+                        records.append((at, label, record))
         except OSError:
             continue
         records.sort(key=lambda item: item[0])

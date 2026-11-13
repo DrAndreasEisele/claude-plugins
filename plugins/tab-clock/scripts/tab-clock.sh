@@ -6,8 +6,8 @@
 #   ✳ 2:30 · Website ⎇ feature · Topic    done; the last answer took 2:30
 #
 # Four blocks, shown in the order of TAB_CLOCK_FORMAT (env block of
-# ~/.claude/settings.json; default "clock folder branch topic"); a block left
-# out is not shown:
+# ~/.claude/settings.json; default "clock folder branch"); a block left out is
+# not shown:
 #   clock   state symbol and running time — always shown, first if missing
 #   folder  project folder of the session; "repo/worktree" in a git worktree
 #   branch  "⎇ branch" when it is not main or master; joins the folder
@@ -16,11 +16,13 @@
 #           title, else a short title Haiku makes from the first prompt (see
 #           make_topic). Claude Code writes its automatic title only now and
 #           then while its own tab title is off, so the last is the usual case.
-#           Without "topic" in the format, Haiku is never asked.
+#           Only on request: without "topic" in the format, Haiku is never
+#           asked and no prompt leaves the session a second time.
 #
 # Entry point for the hooks (UserPromptSubmit, Notification, Stop, StopFailure,
-# SessionEnd) and, started from UserPromptSubmit, the clock itself:
-# `tab-clock.sh clock …`.
+# SessionEnd), for the clock itself (`tab-clock.sh clock …`, started from
+# UserPromptSubmit), for the Haiku title (`tab-clock.sh topic …`) and for the
+# setup skill's terminal check (`tab-clock.sh check`).
 #
 # Does nothing unless CLAUDE_CODE_DISABLE_TERMINAL_TITLE is set (the setup
 # skill does that). Otherwise Claude Code writes the title as well and the two
@@ -28,15 +30,29 @@
 #
 # macOS and Linux. Needs nothing beyond bash, ps, sed, grep, tail, wc, sleep.
 
-RUN="${TMPDIR:-/tmp}"
+# Run folder, private to this user: $XDG_RUNTIME_DIR on Linux, $TMPDIR on
+# macOS (both per user), else /tmp. See private_run.
+RUN="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}"
 RUN="${RUN%/}/tab-clock-$(id -u)"
 
 # --- Helpers -------------------------------------------------------------------
 
-# Writes the tab title. Control characters are removed first: the topic comes
-# from the transcript, and nothing in it may end the escape sequence early.
+# Creates the run folder or checks the existing one. It must be a real folder
+# owned by this user: on a shared /tmp another user could have created it
+# first, to read the files in it or plant links. Then the plugin does nothing.
+private_run() {
+    [ -e "$RUN" ] || mkdir -m 700 "$RUN" 2>/dev/null
+    [ -d "$RUN" ] && [ ! -L "$RUN" ] && [ -O "$RUN" ] || return 1
+    chmod 700 "$RUN" 2>/dev/null
+}
+
+# Writes the tab title. Control characters are removed first, C0 and C1: the
+# topic, folder and branch come from the transcript and the repository, and
+# nothing in them may end the escape sequence early.
 title() {
-    printf '\033]0;%s\007' "$(printf '%s' "$1" | tr -d '\000-\037\177')" > "$TTY" 2>/dev/null
+    local s=$1 LC_ALL=C
+    s=${s//$'\xc2'[$'\x80'-$'\x9f']/}       # C1 controls, UTF-8 encoded
+    printf '\033]0;%s\007' "$(printf '%s' "$s" | tr -d '\000-\037\177')" > "$TTY" 2>/dev/null
 }
 
 # Sets $CLK to m:ss (h:mm:ss from one hour on) without starting a subshell.
@@ -50,7 +66,7 @@ mmss() {
 }
 
 # The blocks to show, in order; "clock" is added in front if missing.
-FORMAT=" ${TAB_CLOCK_FORMAT:-clock folder branch topic} "
+FORMAT=" ${TAB_CLOCK_FORMAT:-clock folder branch} "
 case $FORMAT in *" clock "*) ;; *) FORMAT=" clock$FORMAT" ;; esac
 
 # Sets $LINE from the blocks in $FORMAT. $1 is the clock block ("◐ 1:31").
@@ -240,46 +256,65 @@ clock() {
 }
 
 # --- Session title from Haiku ----------------------------------------------------
-# Runs detached, once per session, from the first prompt that says something.
-# A separate `claude -p` with the user's own login: Haiku, no tools, no hooks
-# (so this plugin does not call itself), no MCP servers, nothing saved as a
-# session. About 2–5 s and 4,000 tokens, mostly context Claude Code always loads.
+# Runs detached, once per session, from the first prompt that says something,
+# and only with "topic" in the format. A separate `claude -p` with the user's
+# own login: Haiku, no tools, no MCP servers, nothing saved as a session.
+# No user, project or plugin hooks, so no other hook runs unnoticed for a
+# title; hooks from managed settings still apply, Claude Code does not let
+# --settings switch those off. It starts in the private run folder, so no
+# project settings load. TAB_CLOCK_CHILD keeps this plugin from reacting to
+# its own call even where hooks stay on. About 2–5 s and 4,000 tokens, mostly
+# context Claude Code always loads.
 
 make_topic() {
     local SESSION=$1 pid i t
     cd "$RUN" || return
-    command claude -p --model haiku --tools "" --strict-mcp-config \
+    TAB_CLOCK_CHILD=1 command claude -p --model haiku --tools "" --strict-mcp-config \
         --no-session-persistence --disable-slash-commands \
         --settings '{"disableAllHooks":true}' \
         --system-prompt 'Name the topic of the request you receive in 2 to 4 words, in the language of the request, like a short session title. Reply with the title only: no quotes, no punctuation at the end.' \
-        < "$SESSION.prompt" > "$SESSION.out" 2>/dev/null &
+        < "$RUN/$SESSION.prompt" > "$RUN/$SESSION.out" 2>/dev/null &
     pid=$!
     for i in $(seq 80); do kill -0 "$pid" 2>/dev/null || break; sleep 0.5; done
     kill "$pid" 2>/dev/null                 # no answer within 40 s: give up
     # Last line that says something, without control characters or quotes.
-    t=$(grep -v '^[[:space:]]*$' "$SESSION.out" 2>/dev/null | tail -n 1 |
+    t=$(grep -v '^[[:space:]]*$' "$RUN/$SESSION.out" 2>/dev/null | tail -n 1 |
         tr -d '\000-\037\177"' | sed -E 's/^[[:space:]]+//; s/[[:space:].]+$//')
-    rm -f "$SESSION.prompt" "$SESSION.out"
+    rm -f "$RUN/$SESSION.prompt" "$RUN/$SESSION.out"
     # At most 30 characters, cut at a word boundary where there is one.
     if [ "${#t}" -gt 30 ]; then
         t=${t:0:31}
         case $t in *" "*) t=${t% *} ;; *) t=${t:0:30} ;; esac
         t=$(printf '%s' "$t" | sed -E 's/[[:space:]:;,.-]+$//')   # no "Login form:"
     fi
-    if [ -n "$t" ] && [ -e "$SESSION.asked" ]; then   # the session may have ended meanwhile
-        printf '%s\n' "$t" > "$SESSION.topic.$$" && mv -f "$SESSION.topic.$$" "$SESSION.topic"
+    if [ -n "$t" ] && [ -e "$RUN/$SESSION.asked" ]; then   # the session may have ended meanwhile
+        printf '%s\n' "$t" > "$RUN/$SESSION.topic.$$" && mv -f "$RUN/$SESSION.topic.$$" "$RUN/$SESSION.topic"
     fi
-    rm -f "$SESSION.asked"
+    rm -f "$RUN/$SESSION.asked"
 }
 
-# --- Hook entry point ----------------------------------------------------------
+# --- Entry points --------------------------------------------------------------
+
+# `tab-clock.sh check`, for the setup skill: prints "terminal" when the Claude
+# session that runs it has a terminal, else "no-terminal" (VS Code chat panel,
+# desktop app).
+if [ "$1" = check ]; then
+    read -r _ TTY <<< "$(claude_tty)"
+    if [ -n "$TTY" ]; then echo terminal; else echo no-terminal; fi
+    exit 0
+fi
+
+# The Haiku call for the topic is a Claude session too: leave it alone.
+[ -z "${TAB_CLOCK_CHILD:-}" ] || exit 0
 
 if [ "$1" = clock ]; then
     shift
+    private_run || exit 0
     clock "$@"
     exit 0
 fi
 if [ "$1" = topic ]; then
+    private_run || exit 0
     make_topic "$2"
     exit 0
 fi
@@ -292,7 +327,7 @@ EVENT=$(field hook_event_name)
 SESSION=$(field session_id)
 TRANSCRIPT=$(field transcript_path)
 [ -n "$SESSION" ] || exit 0
-mkdir -p "$RUN" 2>/dev/null && chmod 700 "$RUN" 2>/dev/null
+private_run || exit 0
 
 case $EVENT in
     UserPromptSubmit)
@@ -345,7 +380,7 @@ case $EVENT in
     SessionEnd)
         # Without its turn file a running clock quits by itself.
         rm -f "$RUN/$SESSION.run" "$RUN/$SESSION.state" "$RUN/$SESSION.done" \
-            "$RUN/$SESSION.topic" "$RUN/$SESSION.asked"
+            "$RUN/$SESSION.topic" "$RUN/$SESSION.asked" "$RUN/$SESSION.prompt"
         read -r _ TTY <<< "$(claude_tty)"
         [ -n "$TTY" ] && title ""   # hand the tab back to the terminal
         ;;

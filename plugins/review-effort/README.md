@@ -142,6 +142,7 @@ README.
 
 | Version | Changes |
 |---|---|
+| 0.3.4 | `analysis`: the page loads no web fonts, so nothing leaves your machine when you open it; one malformed log entry no longer stops the analysis. `setup` and `analysis` stop with a short message in Claude Chat and Cowork |
 | 0.3.3 | `analysis`: ring fills its column again; *Claude working* minutes appear only at the arc |
 | 0.3.2 | `analysis`: ring in minutes instead of shares; a note under *Your turn* shows how much it depends on the 10-minute cap |
 | 0.3.1 | `analysis`: *Claude working* as an arc around the ring — waiting plus the time Claude ran in parallel |

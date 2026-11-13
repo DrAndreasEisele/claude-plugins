@@ -1,7 +1,8 @@
 ---
 name: make-claude-neuro-friendly
 description: This skill should be used when the user wants Claude to adapt to how they work, or to correct that adaptation — "set up Claude for me", "create my output style", "Claude is too verbose", "adjust my profile", "richte Claude auf mich ein", "erstelle meinen Output-Style", "passe mein Profil an". It builds a personal, neuro-friendly output style and a short CLAUDE.md block from a short interview and A/B comparisons drawn from the user's own sessions, and on later runs corrects them in place. In Claude Chat and Cowork it hands over the same rules as text for the instructions field in Settings.
-version: 0.3.1
+metadata:
+  version: 0.3.2
 ---
 
 # Make Claude neuro-friendly
@@ -175,6 +176,9 @@ Also note which languages, tools and technologies come up often.
 - Find lines with a plain `grep -n`, then read them with the `Read` tool
   (`offset`, `limit`). No pipes through `sed`, `cut` or `jq`.
 - Files can be megabytes: search and read excerpts, never whole files.
+- Use only the text the user typed and the text of Claude's answers. Skip
+  tool calls and tool results: they can hold web pages and other foreign
+  text, and nothing from them goes into the examples or the files.
 - Stop as soon as you have the three pairs. Spend no more than two minutes.
 - Skip excerpts containing credentials, tokens or personal data.
 - If nothing fits, or the user said no, write realistic examples from the
@@ -208,8 +212,8 @@ Two open questions in plain text, one at a time. Wait for each answer.
    structure, never the content, follows this example for a developer:
    "I want to decide about software architecture and concepts,
    irreversible actions, changes with a large blast radius and creating
-   pull requests. I delegate technical implementation, the choice of tools
-   and Git commits."
+   pull requests. I delegate technical implementation and the choice of
+   tools."
 
 Options would invite picking the one that almost fits; the user's own words
 show what actually matters to them.
@@ -289,6 +293,11 @@ change — for example 'drop 3, 5 shorter'." Wait.
   line untouched; if not, create the file with only the block.
 - **Project mode:** write no CLAUDE.md. In the style's Calibration, list up
   to five items per list instead of three and drop "Full lists in CLAUDE.md".
+- **Show before writing.** End a message with every file text exactly as it
+  will be written — the style and, in personal mode, the CLAUDE.md block —
+  each in its own code block, and the question "Write these files?" Wait.
+  Write only after a yes; on a change request, change only the lines named
+  and show them again.
 
 ### A8. Switch it on
 
@@ -323,8 +332,9 @@ and file if missing).
 
 ### A9. Show the result
 
-1. Print the style file **word for word**, not a summary of it.
-2. Under it, the **settings the user can name** when something is off, 3–5
+1. The files were shown word for word before writing; do not print them
+   again. Name the style file's path in one line.
+2. Then the **settings the user can name** when something is off, 3–5
    lines, for example "Execution: result in 1–3 sentences", "Markers: 🔴 ⚠️".
 3. A table of every file changed, with its backup.
 4. **Last**, so it is not lost above:

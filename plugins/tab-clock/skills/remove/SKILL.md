@@ -1,7 +1,8 @@
 ---
 name: remove
 description: This skill should be used when the user wants to switch off or remove the tab-clock plugin — "remove tab-clock", "turn off the tab timer", "undo tab-clock setup", "Tab-Uhr entfernen". It undoes exactly what the setup skill changed, nothing else, and ends with a list of every change.
-version: 0.4.0
+metadata:
+  version: 0.5.0
 ---
 
 # Remove tab-clock
